@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.SubcomposeLayout
@@ -142,14 +143,16 @@ public fun PopupHost(
     val contentInert by remember(state) { derivedStateOf { state.progress < ContentInertThreshold } }
     val closeVisible by remember(state) { derivedStateOf { state.progress > CloseVisibleThreshold } }
     val popupPlaced by remember(state) { derivedStateOf { !state.isHidden || state.presentation > 0f } }
-    // Spec §3.1: the drag is disabled until the bar is fully presented.
-    val gestureAllowed = interactionStyle == PopupInteractionStyle.Drag ||
-        interactionStyle == PopupInteractionStyle.Scroll
+    // Spec §3.1: gestures are disabled until the bar is fully presented.
     val dragEnabled by remember(state) { derivedStateOf { !state.isHidden && state.presentation >= 1f } }
+    val velocityThresholdPx = with(LocalDensity.current) {
+        PopupDefaults.velocityThresholdDp.toPx()
+    }
 
     // --- Haptics ------------------------------------------------------------------------------
     // A threshold crossing only buzzes during a user drag; programmatic expand()/collapse() stay silent.
     var userDragging by remember { mutableStateOf(false) }
+    val onUserGesture = remember { { dragging: Boolean -> userDragging = dragging } }
     LaunchedEffect(dragInteractions, state) {
         dragInteractions.interactions.collect {
             when (it) {
@@ -162,17 +165,18 @@ public fun PopupHost(
             }
         }
     }
-    LaunchedEffect(state, hapticsEnabled) {
+    LaunchedEffect(state, hapticsEnabled, haptic) {
         if (!hapticsEnabled) return@LaunchedEffect
         snapshotFlow { state.draggable.targetValue }.drop(1).collect {
             if (userDragging) haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
         }
     }
-    LaunchedEffect(state, hapticsEnabled) {
-        if (!hapticsEnabled) return@LaunchedEffect
+    LaunchedEffect(state, hapticsEnabled, haptic) {
         snapshotFlow { state.draggable.isAnimationRunning }.drop(1).collect { running ->
             if (!running && state.lastGestureWasUser) {
-                haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                if (hapticsEnabled) {
+                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                }
                 state.lastGestureWasUser = false
             }
         }
@@ -192,6 +196,9 @@ public fun PopupHost(
         positionalThreshold = positionalThreshold,
         animationSpec = PopupDefaults.snapSpec,
     )
+    val nestedScrollConnection = remember(state, scope, velocityThresholdPx) {
+        PopupNestedScrollConnection(state, scope, velocityThresholdPx)
+    }
 
     CompositionLocalProvider(
         LocalPopupBarStyle provides barStyle,
@@ -215,7 +222,9 @@ public fun PopupHost(
                             translationY = bottomBarTranslation(state.progress, size.height)
                         },
                 ) { bottomBar() }
-            }.first().measure(Constraints(minWidth = width, maxWidth = width))
+            }.first().measure(
+                Constraints(minWidth = width, maxWidth = width, maxHeight = height),
+            )
             val bottomBarHeight = bottomBarPlaceable.height
             // No docking bar: the popup bar has to respect the navigation bar inset itself.
             val dockingInset = if (bottomBarHeight == 0) navigationBarInsets.getBottom(this) else 0
@@ -286,16 +295,29 @@ public fun PopupHost(
                         // pointer and the bar's own clickable still wins on the Main pass.
                         .absorbPointers()
                         .then(
-                            if (gestureAllowed) {
-                                Modifier.anchoredDraggable(
+                            when (interactionStyle) {
+                                PopupInteractionStyle.Drag,
+                                PopupInteractionStyle.Scroll,
+                                -> Modifier.anchoredDraggable(
                                     state = state.draggable,
                                     orientation = Orientation.Vertical,
                                     enabled = dragEnabled,
                                     interactionSource = dragInteractions,
                                     flingBehavior = flingBehavior,
                                 )
-                            } else {
-                                Modifier
+
+                                PopupInteractionStyle.Snap -> if (dragEnabled) {
+                                    Modifier.popupSnapGesture(
+                                        state = state,
+                                        scope = scope,
+                                        velocityThresholdPx = velocityThresholdPx,
+                                        onUserGesture = onUserGesture,
+                                    )
+                                } else {
+                                    Modifier
+                                }
+
+                                PopupInteractionStyle.None -> Modifier
                             },
                         ),
                 ) {
@@ -305,6 +327,13 @@ public fun PopupHost(
                             .matchParentSize()
                             .testTag("popupbar:content")
                             .graphicsLayer { alpha = contentAlpha(state.progress) }
+                            .then(
+                                if (interactionStyle == PopupInteractionStyle.Scroll) {
+                                    Modifier.nestedScroll(nestedScrollConnection)
+                                } else {
+                                    Modifier
+                                },
+                            )
                             .then(
                                 if (contentInert) {
                                     Modifier.semantics { hideFromAccessibility() }
@@ -463,7 +492,7 @@ internal suspend fun PopupState.handleBackGesture(
                 draggable.anchoredDrag { _ -> dragTo(distance * (1f - backPeekProgress(progress))) }
             }
         }
-        collapse()
+        collapseFromGesture()
     } catch (_: CancellationException) {
         springBackScope.launch { draggable.animateTo(PopupValue.Expanded, snapSpec) }
     }

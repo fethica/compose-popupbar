@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -66,7 +67,7 @@ class PopupBackGestureTest {
         assertEquals(PopupValue.Expanded, state.currentValue)
     }
 
-    @Test fun `a completed back gesture collapses`() = runTest {
+    @Test fun `a completed back gesture collapses and records a user settle`() = runTest {
         val state = PopupState(PopupValue.Expanded) { true }
         state.updateTravel(1000f)
         val events = Channel<Float>(Channel.UNLIMITED)
@@ -80,6 +81,7 @@ class PopupBackGestureTest {
 
         assertEquals(0f, state.progress, 0.001f)
         assertEquals(PopupValue.Collapsed, state.currentValue)
+        assertTrue(state.lastGestureWasUser)
         job.cancel()
     }
 }

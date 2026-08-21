@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,7 +28,7 @@ public class PopupState internal constructor(
     internal val presentationAnimatable: Animatable<Float, AnimationVector1D> =
         Animatable(if (initialValue == PopupValue.Hidden) 0f else 1f)
     private var hidden: Boolean by mutableStateOf(initialValue == PopupValue.Hidden)
-    internal var travel: Float = 0f
+    internal var travel: Float by mutableFloatStateOf(0f)
         private set
     internal var lastGestureWasUser: Boolean = false
     internal val snapSpec: AnimationSpec<Float> get() = PopupDefaults.snapSpec
@@ -68,9 +69,17 @@ public class PopupState internal constructor(
     }
 
     public suspend fun collapse() {
+        collapse(userGesture = false)
+    }
+
+    internal suspend fun collapseFromGesture() {
+        collapse(userGesture = true)
+    }
+
+    private suspend fun collapse(userGesture: Boolean) {
         if (hidden) return
         if (!confirmValueChange(PopupValue.Collapsed)) return
-        lastGestureWasUser = false
+        lastGestureWasUser = userGesture
         draggable.animateTo(PopupValue.Collapsed, snapSpec)
     }
 
