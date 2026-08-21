@@ -126,7 +126,7 @@ When `PopupBar` is given an `onSeek`, seek by dragging along the hairline; taps 
 - **`scrimColor`**: drawn over the screen as the popup expands, `Color.Transparent` by default. In a light theme give it a translucent dark value: against a pale screen an unscrimmed morph reads as a flat wipe rather than a card growing out of the bar.
 - **`hapticsEnabled`**: threshold and settle feedback during user gestures. Programmatic transitions never buzz.
 
-`PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override.
+`PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override. Titles scroll continuously when truncated, so a barely-clipped title doesn't stop marqueeing after a couple of short cycles.
 
 ## State API
 

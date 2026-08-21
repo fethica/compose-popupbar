@@ -8,6 +8,7 @@
 - Added drag, snap, nested-scroll, and gesture-free interaction styles.
 - Added grabber, chevron, round, and hidden close-button styles with leading, center, and trailing placement.
 - Added localized accessibility semantics, RTL behavior, pure JVM coverage, instrumented Compose coverage, and a full sample app.
+- Fixed the title and subtitle marquee stopping after three short cycles on barely-truncated text; it now scrolls continuously for as long as the text stays truncated.
 
 ### Public surface settled before the first tag
 

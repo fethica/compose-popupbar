@@ -278,7 +278,10 @@ public fun PopupBar(
                     maxLines = 1,
                     overflow = textOverflow,
                     modifier = if (marquee) {
-                        Modifier.basicMarquee(initialDelayMillis = marqueeInitialDelayMillis)
+                        Modifier.basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            initialDelayMillis = marqueeInitialDelayMillis,
+                        )
                     } else {
                         Modifier
                     },
@@ -291,7 +294,10 @@ public fun PopupBar(
                         maxLines = 1,
                         overflow = textOverflow,
                         modifier = if (marquee) {
-                            Modifier.basicMarquee(initialDelayMillis = marqueeInitialDelayMillis)
+                            Modifier.basicMarquee(
+                                iterations = Int.MAX_VALUE,
+                                initialDelayMillis = marqueeInitialDelayMillis,
+                            )
                         } else {
                             Modifier
                         },
