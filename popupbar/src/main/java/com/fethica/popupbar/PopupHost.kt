@@ -84,6 +84,7 @@ private const val BarPointerThreshold = 0.1f     // the bar stops taking taps
 private const val BarPlacementThreshold = 0.3f   // barAlpha() has reached 0: stop placing the bar
 private const val ContentInertThreshold = 0.2f   // contentAlpha() starts rising
 private const val CloseVisibleThreshold = 0.6f   // closeButtonAlpha() starts rising
+private const val BackgroundHiddenThreshold = 0.5f // the popup covers the screen: hide what's behind
 
 /**
  * Receiver of [PopupHost]'s `popupBar` slot.
@@ -164,6 +165,12 @@ public fun PopupHost(
     val contentInert by remember(state) { derivedStateOf { state.progress < ContentInertThreshold } }
     val closeVisible by remember(state) { derivedStateOf { state.progress > CloseVisibleThreshold } }
     val popupPlaced by remember(state) { derivedStateOf { !state.isHidden || state.presentation > 0f } }
+    // Past halfway the card covers the screen, but the screen content and the docking bar are still
+    // composed and still placed (the docking bar only translates away). Without this they stay in
+    // the accessibility tree, so TalkBack swipes straight from the popup into a nav bar and a screen
+    // the user cannot see. `hideFromAccessibility` rather than `clearAndSetSemantics`: the test tags
+    // below have to survive.
+    val backgroundHidden by remember(state) { derivedStateOf { state.progress > BackgroundHiddenThreshold } }
     // Spec §3.1: gestures are disabled until the bar is fully presented.
     val dragEnabled by remember(state) { derivedStateOf { !state.isHidden && state.presentation >= 1f } }
     val velocityThresholdPx = with(LocalDensity.current) {
@@ -244,7 +251,14 @@ public fun PopupHost(
                         .testTag("popupbar:bottomBar")
                         .graphicsLayer {
                             translationY = bottomBarTranslation(state.progress, size.height)
-                        },
+                        }
+                        .then(
+                            if (backgroundHidden) {
+                                Modifier.semantics { hideFromAccessibility() }
+                            } else {
+                                Modifier
+                            },
+                        ),
                 ) { bottomBar() }
             }.first().measure(
                 Constraints(minWidth = width, maxWidth = width, maxHeight = height),
@@ -280,7 +294,18 @@ public fun PopupHost(
             )
             val insetDp = insetPx.toDp()
             val screenPlaceable = subcompose(Slot.Screen) {
-                Box(Modifier.fillMaxSize().testTag("popupbar:screen")) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .testTag("popupbar:screen")
+                        .then(
+                            if (backgroundHidden) {
+                                Modifier.semantics { hideFromAccessibility() }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                ) {
                     content(PaddingValues(bottom = insetDp))
                     if (scrimColor != Color.Transparent) {
                         Box(

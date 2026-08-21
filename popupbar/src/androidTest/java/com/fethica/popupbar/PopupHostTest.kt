@@ -11,9 +11,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -31,6 +34,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+
+private val HiddenFromAccessibility: SemanticsMatcher =
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
 
 @RunWith(AndroidJUnit4::class)
 class PopupHostTest {
@@ -170,6 +176,29 @@ class PopupHostTest {
 
         rule.onNodeWithContentDescription("Title, Subtitle").assert(hasClickAction())
         rule.onAllNodesWithContentDescription("Title, Subtitle").assertCountEquals(1)
+    }
+
+    /**
+     * C6: the screen and the docking bar keep being composed and placed behind an expanded popup, so
+     * without an explicit gate TalkBack walks straight off the popup into UI the user cannot see.
+     *
+     * The assertion is about ancestry rather than existence on purpose: `hideFromAccessibility()`
+     * marks a subtree for accessibility services but does not prune it from the test's semantics
+     * tree, so `assertDoesNotExist()` — which does hold for the `clearAndSetSemantics` case below —
+     * would fail here for a reason that has nothing to do with the behaviour under test.
+     */
+    @Test
+    fun expandedPopupHidesTheScreenAndDockingBarFromAccessibility() {
+        setHost()
+
+        rule.onNodeWithTag("screenInner").assert(!hasAnyAncestor(HiddenFromAccessibility))
+        rule.onNodeWithTag("nav").assert(!hasAnyAncestor(HiddenFromAccessibility))
+
+        rule.runOnIdle { animationScope.launch { state.expand() } }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("screenInner").assert(hasAnyAncestor(HiddenFromAccessibility))
+        rule.onNodeWithTag("nav").assert(hasAnyAncestor(HiddenFromAccessibility))
     }
 
     @Test
