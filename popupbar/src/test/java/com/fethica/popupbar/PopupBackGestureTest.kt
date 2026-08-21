@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -14,6 +15,33 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** Runs an animation to completion without a real choreographer. */
+internal class ImmediateFrameClock : MonotonicFrameClock {
+    private var nanos = 0L
+    override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+        nanos += 16_000_000L
+        return onFrame(nanos)
+    }
+}
+
+/**
+ * Like [ImmediateFrameClock] but suspends one virtual frame per callback, so a test can stop an
+ * animation *between* frames. [ImmediateFrameClock] never suspends, which means an `animateTo` on it
+ * spins to completion inside a single dispatcher task and can never be cancelled part-way.
+ */
+internal class SteppingFrameClock : MonotonicFrameClock {
+    private var nanos = 0L
+    override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+        delay(FrameMillis)
+        nanos += FrameMillis * 1_000_000L
+        return onFrame(nanos)
+    }
+
+    private companion object {
+        const val FrameMillis = 16L
+    }
+}
+
 /**
  * Covers `PopupHost`'s predictive-back body. The cancellation case is the one that matters:
  * `ComposePredictiveBackHandler.onBackCancelled()` cancels the event channel *and then* the job the
@@ -22,15 +50,6 @@ import org.junit.Test
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PopupBackGestureTest {
-
-    /** Runs an animation to completion without a real choreographer. */
-    private class ImmediateFrameClock : MonotonicFrameClock {
-        private var nanos = 0L
-        override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
-            nanos += 16_000_000L
-            return onFrame(nanos)
-        }
-    }
 
     @Test fun `a peek moves the popup back by the back peek fraction`() = runTest {
         val state = PopupState(PopupValue.Expanded) { true }

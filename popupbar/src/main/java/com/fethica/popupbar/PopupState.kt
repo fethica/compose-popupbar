@@ -53,16 +53,30 @@ public class PopupState internal constructor(
         )
     }
 
+    /**
+     * Hidden -> Collapsed, animated.
+     *
+     * Also *heals* a partial presentation: a caller cancelled mid-[hide] (or mid-`present`) leaves
+     * the bar part-way through its slide, and this animates the rest of the way instead of
+     * short-circuiting on the settled flag and stranding it there for good.
+     */
     public suspend fun present() {
-        if (!hidden) return
+        if (!hidden && presentationAnimatable.value >= 1f) return
         if (!confirmValueChange(PopupValue.Collapsed)) return
-        draggable.snapTo(PopupValue.Collapsed)
-        hidden = false
+        if (hidden) {
+            draggable.snapTo(PopupValue.Collapsed)
+            hidden = false
+        }
         presentationAnimatable.animateTo(1f, presentationSpec)
     }
 
     public suspend fun expand() {
-        if (hidden) present()
+        if (hidden) {
+            present()
+            // present() can be vetoed by confirmValueChange, and expanding a popup that was never
+            // presented animates a card nobody can see. Only proceed once the bar really is out.
+            if (hidden) return
+        }
         if (!confirmValueChange(PopupValue.Expanded)) return
         lastGestureWasUser = false
         draggable.animateTo(PopupValue.Expanded, snapSpec)
@@ -87,8 +101,12 @@ public class PopupState internal constructor(
         if (hidden) return
         if (!confirmValueChange(PopupValue.Hidden)) return
         if (draggable.targetValue == PopupValue.Expanded) draggable.animateTo(PopupValue.Collapsed, snapSpec)
-        presentationAnimatable.animateTo(0f, presentationSpec)
+        // Claim Hidden *before* the slide, not after: if the caller's coroutine is cancelled
+        // mid-animation (a quick source switch re-running a LaunchedEffect), the state must read as
+        // "hidden, still finishing its exit" — which present() heals — and not as "presented" with a
+        // half-slid bar, which no later present() would ever touch again.
         hidden = true
+        presentationAnimatable.animateTo(0f, presentationSpec)
     }
 
     public suspend fun snapTo(value: PopupValue) {
