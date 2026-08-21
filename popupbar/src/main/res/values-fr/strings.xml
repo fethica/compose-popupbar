@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="popupbar_expand">Agrandir</string>
+    <string name="popupbar_collapse">Réduire</string>
+    <string name="popupbar_close">Fermer</string>
+    <string name="popupbar_progress">Progression</string>
+    <string name="popupbar_seek">Avancer ou reculer</string>
+</resources>
