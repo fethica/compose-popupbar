@@ -47,7 +47,7 @@ internal fun closeButtonAlpha(progress: Float): Float {
     val width = 1f - threshold
     return ((progress - threshold) / width).coerceIn(0f, 1f)
 }
-internal fun backPeekProgress(backProgress: Float): Float = 1f - 0.3f * backProgress.coerceIn(0f, 1f)
+internal fun backPeekProgress(backProgress: Float): Float = 1f - PopupDefaults.backPeekFraction * backProgress.coerceIn(0f, 1f)
 
 internal fun progressFromOffset(offset: Float, travel: Float): Float =
     if (travel <= 0f || offset.isNaN()) 0f else (1f - offset / travel).coerceIn(0f, 1f)

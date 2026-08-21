@@ -77,7 +77,7 @@ public class PopupState internal constructor(
     public suspend fun hide() {
         if (hidden) return
         if (!confirmValueChange(PopupValue.Hidden)) return
-        if (draggable.settledValue == PopupValue.Expanded) draggable.animateTo(PopupValue.Collapsed, snapSpec)
+        if (draggable.targetValue == PopupValue.Expanded) draggable.animateTo(PopupValue.Collapsed, snapSpec)
         presentationAnimatable.animateTo(0f, presentationSpec)
         hidden = true
     }
