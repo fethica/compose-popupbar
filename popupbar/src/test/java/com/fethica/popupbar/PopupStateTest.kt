@@ -69,6 +69,25 @@ class PopupStateTest {
         assertEquals(0f, s.progress, 0f)
     }
 
+    /** The mirror of the test above: a cancelled exit must be finishable by another `hide()`. */
+    @Test fun `a hide cancelled mid animation is finished by the next hide`() = runTest {
+        val s = PopupState(PopupValue.Collapsed) { true }
+        s.updateTravel(1000f)
+
+        val hideJob = launch(SteppingFrameClock()) { s.hide() }
+        advanceTimeBy(150)
+        val stranded = s.presentation
+        assertTrue("hide must be caught mid-slide, was $stranded", stranded in 0.01f..0.99f)
+        hideJob.cancel()
+        advanceUntilIdle()
+
+        launch(SteppingFrameClock()) { s.hide() }
+        advanceUntilIdle()
+
+        assertEquals(0f, s.presentation, 0.001f)
+        assertTrue(s.isHidden)
+    }
+
     @Test fun `hide during an in-flight expand collapses first and then hides`() = runTest {
         val s = PopupState(PopupValue.Collapsed) { true }
         s.updateTravel(1000f)

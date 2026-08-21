@@ -97,8 +97,14 @@ public class PopupState internal constructor(
         draggable.animateTo(PopupValue.Collapsed, snapSpec)
     }
 
+    /**
+     * -> Hidden, animated (collapses first if Expanded).
+     *
+     * The mirror of [present]: a `hide()` whose caller was cancelled leaves a ghost bar part-way
+     * through its exit, and a second `hide()` has to finish it rather than no-op on the flag.
+     */
     public suspend fun hide() {
-        if (hidden) return
+        if (hidden && presentationAnimatable.value <= 0f) return
         if (!confirmValueChange(PopupValue.Hidden)) return
         if (draggable.targetValue == PopupValue.Expanded) draggable.animateTo(PopupValue.Collapsed, snapSpec)
         // Claim Hidden *before* the slide, not after: if the caller's coroutine is cancelled
