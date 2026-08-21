@@ -155,6 +155,16 @@ Insets elsewhere:
 - **`bottomBar`** owns its `navigationBars` inset, exactly like a plain `NavigationBar` outside this library. The host does not add one. Only when `bottomBar` is empty does the host apply the navigation-bar inset itself, so the popup bar does not sit under the gesture pill.
 - **`content`** receives `PaddingValues` with a bottom value only: the docking bar plus, once presented, the popup bar and its margins. Every other edge is yours, including the status bar.
 
+Apply that inset as `contentPadding` on your scrollable content, not as outer padding on an opaque container: the bar must float over your list, not sit on a strip. Non-scrolling content applies it as inner padding on its own column instead. Either way it is a bottom value only; the host paints nothing behind the bar itself, only the card, through `containerColor`.
+
+```kotlin
+LazyColumn(
+    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+) {
+    // the last row scrolls up past the bar; the list stays visible through its margins and the gap above it
+}
+```
+
 When using shared artwork, pass one composable through `popupImage` and reserve its expanded destination exactly once:
 
 ```kotlin
