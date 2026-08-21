@@ -47,6 +47,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
@@ -118,6 +119,7 @@ public fun PopupHost(
     val dragInteractions = remember { MutableInteractionSource() }
     val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val contentScope = remember(state) { PopupContentScopeImpl(state) }
+    val expandLabel = stringResource(R.string.popupbar_expand)
     // WindowInsets values are @Composable to read; capture the holder here and query it in measure.
     val navigationBarInsets = WindowInsets.navigationBars
 
@@ -329,7 +331,10 @@ public fun PopupHost(
                                     if (barTappable) {
                                         // Spec: a tap expands under every interaction style,
                                         // including None.
-                                        Modifier.clickable(role = Role.Button) {
+                                        Modifier.clickable(
+                                            onClickLabel = expandLabel,
+                                            role = Role.Button,
+                                        ) {
                                             scope.launch { state.expand() }
                                         }
                                     } else {
@@ -350,12 +355,13 @@ public fun PopupHost(
                             .windowInsetsPadding(WindowInsets.statusBars)
                             .graphicsLayer { alpha = closeButtonAlpha(state.progress) },
                     ) {
-                        PopupCloseButton(
-                            style = closeButtonStyle,
-                            position = closeButtonPosition,
-                            enabled = closeVisible,
-                            onClick = { scope.launch { state.collapse() } },
-                        )
+                        if (closeVisible) {
+                            PopupCloseButton(
+                                style = closeButtonStyle,
+                                position = closeButtonPosition,
+                                onClick = { scope.launch { state.collapse() } },
+                            )
+                        }
                     }
                 }
             }.first().measure(looseConstraints)

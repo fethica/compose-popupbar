@@ -6,53 +6,103 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 private val GrabberWidth = 36.dp
 private val GrabberHeight = 5.dp
-private val GrabberTopPadding = 8.dp
-private val TouchTargetSize = 48.dp
+private val GrabberTouchTargetWidth = 88.dp
+private val GrabberTouchTargetHeight = 48.dp
+private val GrabberTopPadding = 4.dp
+private val ChevronSize = 28.dp
+private val RoundButtonSize = 40.dp
+private val RoundButtonTopPadding = 8.dp
+private val EdgeHorizontalPadding = 8.dp
 private const val GrabberAlpha = 0.4f
 
-/**
- * Temporary close affordance: the Grabber only. Task 6 replaces this with the full
- * Grabber / Chevron / Round / None implementation and moves the metrics into [PopupDefaults].
- *
- * [enabled] is false while the popup is collapsed; the host relies on the modifier chain dropping
- * the `clickable` node entirely so the invisible affordance is not a hit-test target at all.
- */
+/** The collapse affordance shown at the top of the expanded popup. */
 @Composable
 internal fun PopupCloseButton(
     style: PopupCloseButtonStyle,
     position: PopupCloseButtonPosition,
-    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // `position` is unused until Task 6 gives Chevron/Round a leading/trailing mirror; the host
-    // already places this composable horizontally.
-    if (style == PopupCloseButtonStyle.None) return
-    val color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = GrabberAlpha)
-    Box(
-        modifier
-            .size(TouchTargetSize)
-            .testTag("popupbar:close")
-            .then(if (enabled) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Box(
-            Modifier
-                .padding(top = GrabberTopPadding)
-                .size(width = GrabberWidth, height = GrabberHeight)
-                .clip(RoundedCornerShape(percent = 50))
-                .background(color),
-        )
+    when (style) {
+        PopupCloseButtonStyle.Grabber -> {
+            val collapseDescription = stringResource(R.string.popupbar_collapse)
+            Box(
+                modifier
+                    .size(width = GrabberTouchTargetWidth, height = GrabberTouchTargetHeight)
+                    .testTag("popupbar:close")
+                    .semantics { contentDescription = collapseDescription }
+                    .clickable(role = Role.Button, onClick = onClick),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                Box(
+                    Modifier
+                        .padding(top = GrabberTopPadding)
+                        .size(width = GrabberWidth, height = GrabberHeight)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = GrabberAlpha),
+                        ),
+                )
+            }
+        }
+
+        PopupCloseButtonStyle.Chevron -> {
+            val closeDescription = stringResource(R.string.popupbar_close)
+            IconButton(
+                onClick = onClick,
+                modifier = modifier
+                    .edgePadding(position)
+                    .testTag("popupbar:close"),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = closeDescription,
+                    modifier = Modifier.size(ChevronSize),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        PopupCloseButtonStyle.Round -> {
+            val closeDescription = stringResource(R.string.popupbar_close)
+            FilledTonalIconButton(
+                onClick = onClick,
+                modifier = modifier
+                    .padding(top = RoundButtonTopPadding)
+                    .edgePadding(position)
+                    .size(RoundButtonSize)
+                    .testTag("popupbar:close"),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = closeDescription,
+                )
+            }
+        }
+
+        PopupCloseButtonStyle.None -> Box(modifier.size(0.dp))
     }
 }
+
+private fun Modifier.edgePadding(position: PopupCloseButtonPosition): Modifier =
+    if (position == PopupCloseButtonPosition.Center) this else padding(horizontal = EdgeHorizontalPadding)
