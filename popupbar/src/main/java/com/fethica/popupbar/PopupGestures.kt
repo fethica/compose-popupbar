@@ -59,6 +59,11 @@ internal fun Modifier.popupSnapGesture(
     )
 }
 
+/** Consumes a vertical swipe so the bar's click recognizer cannot turn it into a tap. */
+internal fun Modifier.popupIgnoreVerticalDrag(): Modifier = pointerInput(Unit) {
+    detectVerticalDragGestures { change, _ -> change.consume() }
+}
+
 /** Hands unconsumed scroll deltas between scrollable popup content and the popup anchors. */
 internal class PopupNestedScrollConnection(
     private val state: PopupState,

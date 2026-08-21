@@ -55,8 +55,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag as semanticsTestTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -317,7 +319,7 @@ public fun PopupHost(
                                     Modifier
                                 }
 
-                                PopupInteractionStyle.None -> Modifier
+                                PopupInteractionStyle.None -> Modifier.popupIgnoreVerticalDrag()
                             },
                         ),
                 ) {
@@ -325,7 +327,6 @@ public fun PopupHost(
                     Box(
                         Modifier
                             .matchParentSize()
-                            .testTag("popupbar:content")
                             .graphicsLayer { alpha = contentAlpha(state.progress) }
                             .then(
                                 if (interactionStyle == PopupInteractionStyle.Scroll) {
@@ -336,9 +337,12 @@ public fun PopupHost(
                             )
                             .then(
                                 if (contentInert) {
-                                    Modifier.semantics { hideFromAccessibility() }
+                                    Modifier.clearAndSetSemantics {
+                                        semanticsTestTag = "popupbar:content"
+                                        hideFromAccessibility()
+                                    }
                                 } else {
-                                    Modifier
+                                    Modifier.testTag("popupbar:content")
                                 },
                             ),
                     ) {

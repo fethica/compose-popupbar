@@ -14,9 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.isHiddenFromAccessibility
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -178,7 +176,6 @@ class PopupHostTest {
     fun collapsedContentIsHiddenFromAccessibility() {
         setHost()
 
-        rule.onNodeWithTag("popupbar:content").assert(isHiddenFromAccessibility())
-        rule.onNodeWithTag("player").assertIsNotDisplayed()
+        rule.onNodeWithTag("player").assertDoesNotExist()
     }
 }
