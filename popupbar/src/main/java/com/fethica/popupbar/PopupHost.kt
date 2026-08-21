@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -43,8 +44,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -53,13 +58,16 @@ import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /** The bar style the host was configured with; [PopupBar] reads it instead of taking a parameter. */
 internal val LocalPopupBarStyle: ProvidableCompositionLocal<PopupBarStyle> =
@@ -70,8 +78,8 @@ internal val LocalPopupHasImage: ProvidableCompositionLocal<Boolean> = compositi
 
 /** Progress thresholds. Each one gates a modifier chain, so each is read through `derivedStateOf`. */
 private const val BarPointerThreshold = 0.1f     // the bar stops taking taps
-private const val BarPlacementThreshold = 0.25f  // barAlpha() has reached 0: stop placing the bar
-private const val ContentInertThreshold = 0.35f  // contentAlpha() starts rising
+private const val BarPlacementThreshold = 0.3f   // barAlpha() has reached 0: stop placing the bar
+private const val ContentInertThreshold = 0.2f   // contentAlpha() starts rising
 private const val CloseVisibleThreshold = 0.6f   // closeButtonAlpha() starts rising
 
 @Stable
@@ -95,7 +103,7 @@ internal data class PopupClipShape(private val rect: Rect, private val radius: F
         Outline.Rounded(RoundRect(rect, CornerRadius(radius, radius)))
 }
 
-private enum class Slot { Screen, BottomBar, Popup }
+private enum class Slot { Screen, BottomBar, Popup, Image }
 
 @Composable
 public fun PopupHost(
@@ -120,6 +128,9 @@ public fun PopupHost(
     val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val contentScope = remember(state) { PopupContentScopeImpl(state) }
     val expandLabel = stringResource(R.string.popupbar_expand)
+    val imageRegistry = remember { PopupImageRegistry() }
+    var hostCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val hostCoordinatesProvider = remember { { hostCoordinates } }
     // WindowInsets values are @Composable to read; capture the holder here and query it in measure.
     val navigationBarInsets = WindowInsets.navigationBars
 
@@ -185,8 +196,12 @@ public fun PopupHost(
     CompositionLocalProvider(
         LocalPopupBarStyle provides barStyle,
         LocalPopupHasImage provides (popupImage != null),
+        LocalPopupImageRegistry provides imageRegistry,
+        LocalPopupHostCoordinates provides hostCoordinatesProvider,
     ) {
-        SubcomposeLayout(modifier = modifier) { constraints ->
+        SubcomposeLayout(
+            modifier = modifier.onGloballyPositioned { hostCoordinates = it },
+        ) { constraints ->
             val width = constraints.maxWidth
             val height = constraints.maxHeight
             val looseConstraints = Constraints(maxWidth = width, maxHeight = height)
@@ -366,10 +381,62 @@ public fun PopupHost(
                 }
             }.first().measure(looseConstraints)
 
+            // 5. One persistent image instance, routed between the two empty reported slots.
+            val imagePlaceable = if (popupImage == null) {
+                null
+            } else {
+                subcompose(Slot.Image) {
+                    Box(
+                        Modifier
+                            .layout { measurable, _ ->
+                                val barSlot = imageRegistry.barSlot
+                                val contentSlot = imageRegistry.contentSlot
+                                val rect = when {
+                                    barSlot == null && contentSlot == null -> null
+                                    barSlot == null -> contentSlot
+                                    contentSlot == null -> barSlot
+                                    else -> imageOverlayRect(state.progress, barSlot, contentSlot)
+                                }
+                                if (rect == null) {
+                                    layout(0, 0) {}
+                                } else {
+                                    val imageWidth = rect.width.roundToInt().coerceAtLeast(0)
+                                    val imageHeight = rect.height.roundToInt().coerceAtLeast(0)
+                                    val placeable = measurable.measure(
+                                        Constraints.fixed(imageWidth, imageHeight),
+                                    )
+                                    layout(width, height) {
+                                        placeable.place(
+                                            rect.left.roundToInt(),
+                                            rect.top.roundToInt(),
+                                        )
+                                    }
+                                }
+                            }
+                            .graphicsLayer {
+                                val p = state.progress
+                                val presented = state.presentation
+                                clip = true
+                                shape = RoundedCornerShape(
+                                    imageOverlayRadius(
+                                        p,
+                                        imageRegistry.barRadius,
+                                        imageRegistry.contentRadius,
+                                    ),
+                                )
+                                shadowElevation = if (p in 0.01f..0.99f) 4.dp.toPx() else 0f
+                                translationY = (1f - presented) * (barHeightPx + bMargin)
+                                alpha = if (presented <= 0f) 0f else 1f
+                            },
+                    ) { popupImage() }
+                }.first().measure(looseConstraints)
+            }
+
             layout(width, height) {
                 screenPlaceable.place(0, 0)
                 bottomBarPlaceable.place(0, height - bottomBarHeight)
                 if (popupPlaced) popupPlaceable.place(0, 0)
+                imagePlaceable?.place(0, 0)
             }
         }
     }
@@ -411,8 +478,30 @@ private fun closeButtonAlignment(position: PopupCloseButtonPosition): Alignment 
 private class PopupContentScopeImpl(override val state: PopupState) : PopupContentScope {
     @Composable
     override fun PopupImageSlot(modifier: Modifier, shape: Shape) {
-        // Task 7 reports these bounds to the host and draws the travelling image overlay.
-        Box(modifier)
+        val registry = LocalPopupImageRegistry.current
+        val hostCoordinates = LocalPopupHostCoordinates.current
+        val density = LocalDensity.current
+        var slotSize by remember(shape) { mutableStateOf(IntSize.Zero) }
+        val radiusPx = (shape as? RoundedCornerShape)?.topStart?.toPx(
+            Size(slotSize.width.toFloat(), slotSize.height.toFloat()),
+            density,
+        ) ?: 0f
+        Box(
+            modifier
+                .onSizeChanged { slotSize = it }
+                .then(
+                    if (registry == null) {
+                        Modifier
+                    } else {
+                        Modifier.reportPopupSlot(
+                            registry = registry,
+                            isBar = false,
+                            hostCoordinates = hostCoordinates,
+                            radiusPx = radiusPx,
+                        )
+                    },
+                ),
+        )
     }
 }
 

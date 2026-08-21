@@ -37,8 +37,12 @@ internal fun contentBottomInset(bottomBarHeight: Float, presentation: Float, bar
 
 internal fun bottomBarTranslation(progress: Float, bottomBarHeight: Float): Float = progress.coerceIn(0f, 1f) * bottomBarHeight
 
-internal fun barAlpha(progress: Float): Float = (1f - progress / 0.25f).coerceIn(0f, 1f)
-internal fun contentAlpha(progress: Float): Float = ((progress - 0.35f) / 0.65f).coerceIn(0f, 1f)
+internal fun barAlpha(progress: Float): Float = (1f - progress / 0.3f).coerceIn(0f, 1f)
+internal fun contentAlpha(progress: Float): Float {
+    val start = 0.2f
+    val end = 0.55f
+    return ((progress - start) / (end - start)).coerceIn(0f, 1f)
+}
 internal fun closeButtonAlpha(progress: Float): Float {
     // width is derived from the same threshold literal (not a separately-rounded 0.4f) so that
     // progress == threshold and progress == 1f divide out to exactly 0f/1f in float32, not a

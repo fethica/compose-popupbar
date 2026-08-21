@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -101,13 +102,30 @@ public object PopupBarDefaults {
 /** Stable test tag for the bar's image slot, independent of [PopupBarStyle]. */
 internal fun PopupBarDefaults.imageSlotTag(): String = "popupbar:imageSlot"
 
-/**
- * Placeholder for the bar's thumbnail. Task 7 turns this into a slot the host registers and
- * travels the popup image through, the same way `PopupImageSlot` does inside `popupContent`.
- */
+/** Empty thumbnail slot whose host-local bounds drive the travelling popup image. */
 @Composable
 internal fun BarImageSlot(modifier: Modifier) {
-    Box(modifier.testTag(PopupBarDefaults.imageSlotTag()))
+    val registry = LocalPopupImageRegistry.current
+    val hostCoordinates = LocalPopupHostCoordinates.current
+    val radiusPx = with(LocalDensity.current) {
+        LocalPopupBarStyle.current.metrics().imageCornerRadius.toPx()
+    }
+    Box(
+        modifier
+            .then(
+                if (registry == null) {
+                    Modifier
+                } else {
+                    Modifier.reportPopupSlot(
+                        registry = registry,
+                        isBar = true,
+                        hostCoordinates = hostCoordinates,
+                        radiusPx = radiusPx,
+                    )
+                },
+            )
+            .testTag(PopupBarDefaults.imageSlotTag()),
+    )
 }
 
 /**

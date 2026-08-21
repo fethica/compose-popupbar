@@ -49,9 +49,17 @@ class PopupGeometryTest {
         assertEquals(75f, mid.left, 0.01f) // easeInOutSine(0.5) == 0.5
     }
 
+    @Test fun `image overlay radius follows the same eased journey as its bounds`() {
+        assertEquals(24f, imageOverlayRadius(0f, 24f, 48f), 0f)
+        assertEquals(36f, imageOverlayRadius(0.5f, 24f, 48f), 0.001f)
+        assertEquals(48f, imageOverlayRadius(1f, 24f, 48f), 0f)
+    }
+
     @Test fun `alphas follow the spec curves`() {
-        assertEquals(1f, barAlpha(0f), 0f); assertEquals(0f, barAlpha(0.25f), 0f); assertEquals(0f, barAlpha(1f), 0f)
-        assertEquals(0f, contentAlpha(0.35f), 0f); assertEquals(1f, contentAlpha(1f), 0f); assertEquals(0.5f, contentAlpha(0.675f), 0.001f)
+        assertEquals(1f, barAlpha(0f), 0f); assertEquals(0.5f, barAlpha(0.15f), 0.001f)
+        assertEquals(0f, barAlpha(0.3f), 0f); assertEquals(0f, barAlpha(1f), 0f)
+        assertEquals(0f, contentAlpha(0.2f), 0f); assertEquals(0.5f, contentAlpha(0.375f), 0.001f)
+        assertEquals(1f, contentAlpha(0.55f), 0f); assertEquals(1f, contentAlpha(1f), 0f)
         assertEquals(0f, closeButtonAlpha(0.6f), 0f); assertEquals(1f, closeButtonAlpha(1f), 0f)
     }
 
