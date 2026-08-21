@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -15,6 +17,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
@@ -31,6 +34,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +55,9 @@ class PopupHostTest {
     private fun setHost(
         interaction: PopupInteractionStyle = PopupInteractionStyle.Drag,
         initial: PopupValue = PopupValue.Collapsed,
+        popupBar: @Composable PopupBarScope.() -> Unit = {
+            PopupBar(title = "Title", subtitle = "Subtitle")
+        },
         popupContent: @Composable PopupContentScope.() -> Unit = {
             Box(Modifier.fillMaxSize().testTag("player"))
         },
@@ -68,7 +77,7 @@ class PopupHostTest {
                                 .testTag("nav"),
                         )
                     },
-                    popupBar = { PopupBar(title = "Title", subtitle = "Subtitle") },
+                    popupBar = popupBar,
                     popupContent = popupContent,
                 ) { padding ->
                     Box(
@@ -176,6 +185,65 @@ class PopupHostTest {
 
         rule.onNodeWithContentDescription("Title, Subtitle").assert(hasClickAction())
         rule.onAllNodesWithContentDescription("Title, Subtitle").assertCountEquals(1)
+    }
+
+    /**
+     * The seekable strip is a band along one edge of the bar, and the action buttons' 48dp targets
+     * reach into that band. Both have to work: seeking anywhere the bar has no other control, and
+     * the action firing when its own button is pressed, whichever edge the strip is on.
+     */
+    private fun seekVersusActions(style: PopupProgressStyle) {
+        var seeked: Float? = null
+        var actionClicks = 0
+        setHost(
+            popupBar = {
+                PopupBar(
+                    title = "Title",
+                    progress = { 0f },
+                    onSeek = { seeked = it },
+                    progressStyle = style,
+                    actions = {
+                        IconButton(
+                            onClick = { actionClicks++ },
+                            modifier = Modifier.testTag("action"),
+                        ) { Box(Modifier.size(24.dp)) }
+                    },
+                )
+            },
+        )
+
+        // Inside the strip's band, over the title: nothing else claims it, so it seeks.
+        rule.onNodeWithTag("popupbar:progress", useUnmergedTree = true).performTouchInput {
+            click(Offset(width * 0.45f, height / 2f))
+        }
+        rule.waitForIdle()
+        assertNotNull("a press in the strip's band must seek", seeked)
+        assertEquals("seeking must not fire the action", 0, actionClicks)
+
+        // The edge of the action button that overlaps the same band still belongs to the button.
+        seeked = null
+        val edgeInset = 4f
+        rule.onNodeWithTag("action", useUnmergedTree = true).performTouchInput {
+            click(
+                Offset(
+                    width / 2f,
+                    if (style == PopupProgressStyle.Top) edgeInset else height - edgeInset,
+                ),
+            )
+        }
+        rule.waitForIdle()
+        assertEquals("the action button must win inside its own bounds", 1, actionClicks)
+        assertNull("pressing the action must not seek", seeked)
+    }
+
+    @Test
+    fun topStripSeeksWithoutStealingTheActionButtons() {
+        seekVersusActions(PopupProgressStyle.Top)
+    }
+
+    @Test
+    fun bottomStripSeeksWithoutStealingTheActionButtons() {
+        seekVersusActions(PopupProgressStyle.Bottom)
     }
 
     /**

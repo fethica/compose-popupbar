@@ -118,6 +118,8 @@ The bar itself expands the popup when tapped. Call the state methods from your o
 | `PopupProgressStyle` | `Top` | Draws the progress strip along the bar's top edge. |
 | `PopupProgressStyle` | `Bottom` | Draws the progress strip along the bar's bottom edge. |
 
+When `PopupBar` is given an `onSeek`, the strip claims a thin touch band along its edge for dragging and tapping to a position. Action buttons still win inside their own bounds, so a play/pause button whose target reaches into that band keeps working.
+
 `PopupHost` also accepts:
 
 - **`containerColor`**: the surface the morph is made of. It is the collapsed bar's background, and the same surface grows into the full-screen card. That is why it lives on the host rather than in `PopupBarColors`, where a second value could only disagree with what is painted.

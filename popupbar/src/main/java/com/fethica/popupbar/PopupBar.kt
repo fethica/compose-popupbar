@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 
 /**
  * Spec §3.3: fixed colors for one [PopupBar] instance. Build one with [PopupBarDefaults.colors].
@@ -233,17 +232,23 @@ public fun PopupBar(
                 }
             },
     ) {
-        if (progress != null && progressStyle == PopupProgressStyle.Top) {
-            // The Row below is composed after this strip, so without a raised z-index it is
-            // hit-tested first and the action buttons — whose 48dp targets reach up into the strip's
-            // band — swallow every touch meant for a `Top` seekable hairline. `Bottom` needs no such
-            // hoist: it is already the last child. The strip is 2dp/3dp of ink at the very top edge,
-            // so drawing it above the Row changes nothing visually.
+        // Composed BEFORE the Row, whichever edge it is on, so the Row is hit-tested first. A
+        // seekable strip is a band, and the action buttons' 48dp targets reach into that band; a
+        // press inside a button's own bounds has to fire the button. The strip still claims the rest
+        // of the band, where the Row has no pointer target at all. `Bottom` used to be composed
+        // last, which made it swallow the buttons' bottom edge — the two edges now behave alike.
+        if (progress != null && progressStyle != PopupProgressStyle.None) {
             PopupProgressStrip(
                 progress,
                 onSeek,
                 colors,
-                Modifier.align(Alignment.TopCenter).zIndex(1f),
+                Modifier.align(
+                    if (progressStyle == PopupProgressStyle.Top) {
+                        Alignment.TopCenter
+                    } else {
+                        Alignment.BottomCenter
+                    },
+                ),
             )
         }
         Row(
@@ -295,9 +300,6 @@ public fun PopupBar(
             CompositionLocalProvider(LocalContentColor provides colors.actionColor) {
                 Row(verticalAlignment = Alignment.CenterVertically, content = actions)
             }
-        }
-        if (progress != null && progressStyle == PopupProgressStyle.Bottom) {
-            PopupProgressStrip(progress, onSeek, colors, Modifier.align(Alignment.BottomCenter))
         }
     }
 }
