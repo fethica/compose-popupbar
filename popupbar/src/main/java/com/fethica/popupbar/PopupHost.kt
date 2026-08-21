@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -53,7 +54,10 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** The bar style the host was configured with; [PopupBar] reads it instead of taking a parameter. */
@@ -90,7 +94,7 @@ internal data class PopupClipShape(private val rect: Rect, private val radius: F
         Outline.Rounded(RoundRect(rect, CornerRadius(radius, radius)))
 }
 
-private enum class Slot { Screen, BottomBar, Popup, Close }
+private enum class Slot { Screen, BottomBar, Popup }
 
 @Composable
 public fun PopupHost(
@@ -164,19 +168,7 @@ public fun PopupHost(
     // --- Predictive back ----------------------------------------------------------------------
     // The popup peels back toward the bar while the gesture is live, then collapses or springs back.
     PredictiveBackHandler(enabled = state.isExpanded) { events ->
-        try {
-            events.collect { event ->
-                val travel = state.travel
-                if (travel > 0f) {
-                    state.draggable.anchoredDrag { _ ->
-                        dragTo(travel * (1f - backPeekProgress(event.progress)))
-                    }
-                }
-            }
-            state.collapse()
-        } catch (_: CancellationException) {
-            state.draggable.animateTo(PopupValue.Expanded, state.snapSpec)
-        }
+        state.handleBackGesture(events.map { it.progress }, springBackScope = scope)
     }
 
     // `anchoredDraggableFlingBehavior(...)` is internal in foundation 1.10.2; the public entry point
@@ -270,6 +262,12 @@ public fun PopupHost(
                             alpha = if (presented <= 0f) 0f else 1f
                         }
                         .background(containerColor)
+                        // The layer is opaque to hit testing whenever it is placed, whatever the
+                        // interaction style: `background()` is a draw node, so without this a tap on
+                        // empty space in an expanded `None`/`Snap` popup fell through to the screen
+                        // underneath. It consumes nothing, so the draggable below still sees every
+                        // pointer and the bar's own clickable still wins on the Main pass.
+                        .absorbPointers()
                         .then(
                             if (gestureAllowed) {
                                 Modifier.anchoredDraggable(
@@ -338,44 +336,65 @@ public fun PopupHost(
                             if (!barTappable) Box(Modifier.fillMaxSize().absorbPointers())
                         }
                     }
+                    // 4. Close button, top-most inside the layer so the morphing clip cuts it: it
+                    // is revealed as the card's top edge reaches it, never floating over the screen
+                    // content above the card. `align` resolves Leading/Trailing for RTL itself.
+                    Box(
+                        Modifier
+                            .align(closeButtonAlignment(closeButtonPosition))
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            .graphicsLayer { alpha = closeButtonAlpha(state.progress) },
+                    ) {
+                        PopupCloseButton(
+                            style = closeButtonStyle,
+                            position = closeButtonPosition,
+                            enabled = closeVisible,
+                            onClick = { scope.launch { state.collapse() } },
+                        )
+                    }
                 }
             }.first().measure(looseConstraints)
-
-            // 4. Close button, under the status bar, fading in last.
-            val closePlaceable = subcompose(Slot.Close) {
-                Box(
-                    Modifier
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .graphicsLayer { alpha = closeButtonAlpha(state.progress) },
-                ) {
-                    PopupCloseButton(
-                        style = closeButtonStyle,
-                        position = closeButtonPosition,
-                        enabled = closeVisible,
-                        onClick = { scope.launch { state.collapse() } },
-                    )
-                }
-            }.first().measure(Constraints(maxWidth = width, maxHeight = height))
 
             layout(width, height) {
                 screenPlaceable.place(0, 0)
                 bottomBarPlaceable.place(0, height - bottomBarHeight)
-                if (popupPlaced) {
-                    popupPlaceable.place(0, 0)
-                    if (closeVisible) {
-                        val rtl = layoutDirection == LayoutDirection.Rtl
-                        val end = width - closePlaceable.width
-                        val closeX = when (closeButtonPosition) {
-                            PopupCloseButtonPosition.Leading -> if (rtl) end else 0
-                            PopupCloseButtonPosition.Center -> end / 2
-                            PopupCloseButtonPosition.Trailing -> if (rtl) 0 else end
-                        }
-                        closePlaceable.place(closeX.coerceAtLeast(0), 0)
-                    }
-                }
+                if (popupPlaced) popupPlaceable.place(0, 0)
             }
         }
     }
+}
+
+/**
+ * Body of the host's `PredictiveBackHandler`, extracted so the cancellation path can be tested.
+ *
+ * [springBackScope] must **not** be the coroutine that runs this function.
+ * `ComposePredictiveBackHandler.onBackCancelled()` cancels the event channel *and then* the job the
+ * handler body runs in, so by the time the `CancellationException` surfaces here that job is already
+ * cancelling: a suspending `animateTo` on it would throw before its first frame and leave the card
+ * stranded wherever the peek stopped. Handing the spring back to the host's own remembered scope is
+ * what makes a cancelled gesture recover.
+ */
+internal suspend fun PopupState.handleBackGesture(
+    backProgress: Flow<Float>,
+    springBackScope: CoroutineScope,
+) {
+    try {
+        backProgress.collect { progress ->
+            val distance = travel
+            if (distance > 0f) {
+                draggable.anchoredDrag { _ -> dragTo(distance * (1f - backPeekProgress(progress))) }
+            }
+        }
+        collapse()
+    } catch (_: CancellationException) {
+        springBackScope.launch { draggable.animateTo(PopupValue.Expanded, snapSpec) }
+    }
+}
+
+private fun closeButtonAlignment(position: PopupCloseButtonPosition): Alignment = when (position) {
+    PopupCloseButtonPosition.Leading -> Alignment.TopStart
+    PopupCloseButtonPosition.Center -> Alignment.TopCenter
+    PopupCloseButtonPosition.Trailing -> Alignment.TopEnd
 }
 
 private class PopupContentScopeImpl(override val state: PopupState) : PopupContentScope {
