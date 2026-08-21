@@ -11,7 +11,7 @@
 | | |
 | --- | --- |
 | `minSdk` | 24 |
-| `compileSdk` | 36 |
+| `compileSdk` | 36.1 (`release(36) { minorApiLevel = 1 }`) |
 | Compose | BOM 2026.01.01 (the library exposes it as `api`, so it lines your app up on the same versions) |
 | Building this repo | Kotlin 2.3.10, AGP 9.0.1, JDK 21 |
 
@@ -132,10 +132,10 @@ When `PopupBar` is given an `onSeek`, the strip claims a thin touch band along i
 
 | Member | Meaning |
 | --- | --- |
-| `present()` | Animate from `Hidden` to `Collapsed`; otherwise no-op. |
+| `present()` | Animate from `Hidden` to `Collapsed`. Also finishes a presentation left part-way by a cancelled `present()` or `hide()`; no-op once fully presented. |
 | `expand()` | Present if necessary, then animate to `Expanded`. |
 | `collapse()` | Animate to `Collapsed`; no-op while hidden. |
-| `hide()` | Collapse if necessary, then animate out to `Hidden`. |
+| `hide()` | Collapse if necessary, then animate out to `Hidden`. Finishes a cancelled exit the same way; no-op once fully hidden. |
 | `snapTo(value)` | Move immediately to `Hidden`, `Collapsed`, or `Expanded`. |
 | `currentValue` | Last settled `PopupValue`. |
 | `targetValue` | Destination of the current gesture or animation. |

@@ -101,7 +101,7 @@ public interface PopupBarScope {
      * [PopupBarStyle]. Call it at most once inside `popupBar`.
      */
     @Composable
-    public fun PopupBarImageSlot(modifier: Modifier)
+    public fun PopupBarImageSlot(modifier: Modifier = Modifier)
 }
 
 @Stable
@@ -113,7 +113,7 @@ public interface PopupContentScope {
      * Call it once inside `popupContent`.
      */
     @Composable
-    public fun PopupImageSlot(modifier: Modifier, shape: Shape = RectangleShape)
+    public fun PopupImageSlot(modifier: Modifier = Modifier, shape: Shape = RectangleShape)
 }
 
 /**
