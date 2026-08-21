@@ -31,16 +31,19 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.material3)
+    // `api`, not `implementation`: the published API hands consumers Modifier, Color, Shape,
+    // PaddingValues, RowScope, TextStyle, AnimationSpec and Saver, and PopupHost installs a
+    // PredictiveBackHandler. A consumer that only declares this library must still be able to name
+    // those types, and must resolve them at the same versions — hence the BOM is `api` too.
+    api(platform(libs.androidx.compose.bom))
+    api(libs.androidx.compose.ui)
+    api(libs.androidx.compose.ui.graphics)
+    api(libs.androidx.compose.foundation)
+    api(libs.androidx.compose.animation)
+    api(libs.androidx.compose.material3)
+    api(libs.androidx.activity.compose)
+    // Internal only (the close button's two glyphs), so it stays off the consumer's compile path.
     implementation(libs.androidx.compose.material.icons.core)
-    implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.junit)
