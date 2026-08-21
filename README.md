@@ -185,7 +185,16 @@ PopupHost(
 ) { padding -> AppContent(Modifier.padding(padding)) }
 ```
 
-The host keeps that artwork composable alive and moves it between the bar thumbnail and content slot. For lyrics, queues, or other long content, use `PopupInteractionStyle.Scroll` with a nested-scroll child such as `LazyColumn`.
+The host keeps that artwork composable alive and moves it between the bar thumbnail and content slot. Because it composes `popupImage` once and renders that same composable at both sizes, an image loader that sizes its request from the first measurement it sees, such as Coil's `AsyncImage` or Glide's compose integration, will decode a thumbnail-sized bitmap at the 48 dp bar and then stretch it to fill the much larger expanded slot. Request the image at its expanded size, or at its original size, and let the bar thumbnail downscale from that instead:
+
+```kotlin
+ImageRequest.Builder(context)
+    .data(url)
+    .size(Size.ORIGINAL) // or the expanded slot's pixel size
+    .build()
+```
+
+For lyrics, queues, or other long content, use `PopupInteractionStyle.Scroll` with a nested-scroll child such as `LazyColumn`.
 
 `PopupBar` reserves the collapsed end of that trip for you. A hand-written bar reserves it through `PopupBarScope`, the receiver of the `popupBar` slot:
 

@@ -9,6 +9,7 @@
 - Added grabber, chevron, round, and hidden close-button styles with leading, center, and trailing placement.
 - Added localized accessibility semantics, RTL behavior, pure JVM coverage, instrumented Compose coverage, and a full sample app.
 - Fixed the title and subtitle marquee stopping after three short cycles on barely-truncated text; it now scrolls continuously for as long as the text stays truncated.
+- Documented that `popupImage` must be requested at its expanded size, since the host renders that one composable at both the bar thumbnail and the expanded slot.
 
 ### Public surface settled before the first tag
 
