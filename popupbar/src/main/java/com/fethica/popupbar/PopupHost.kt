@@ -504,6 +504,19 @@ public fun PopupHost(
                                     }
                                 }
                             }
+                            // No presentation `translationY` here on purpose. The slots report
+                            // through `localBoundingBoxOf`, which walks the popup layer's own
+                            // graphicsLayer and therefore already carries that translation;
+                            // re-applying it would move the artwork twice.
+                            //
+                            // Measured on a Pixel 8 (60fps screenrecord of Hide then Present, frames
+                            // read at 15fps): the artwork travels with the card the whole way. Its
+                            // top sits 22px below the card's top at rest and 38-42px at the fastest
+                            // frames of a present, 1-5px at the fastest frames of a hide — a lag of
+                            // ~20px, exactly one frame of the 189px/300ms slide, and it decays to
+                            // zero at both ends. That is `onGloballyPositioned` reporting one pass
+                            // behind the layer transform, not the artwork detaching: detached, the
+                            // error would be the full 189px for the whole animation.
                             .graphicsLayer {
                                 val p = state.progress
                                 val presented = state.presentation
