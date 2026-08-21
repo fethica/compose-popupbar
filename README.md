@@ -6,6 +6,15 @@
 | --- | --- | --- |
 | ![A floating popup bar above bottom navigation](docs/images/popupbar-collapsed.png) | ![The popup bar morphing into full-screen content](docs/images/popupbar-mid-morph.png) | ![Expanded popup content](docs/images/popupbar-expanded.png) |
 
+## Requirements
+
+| | |
+| --- | --- |
+| `minSdk` | 24 |
+| `compileSdk` | 36 |
+| Compose | BOM 2026.01.01 (the library exposes it as `api`, so it lines your app up on the same versions) |
+| Building this repo | Kotlin 2.3.10, AGP 9.0.1, JDK 21 |
+
 ## Install from JitPack
 
 Add JitPack to dependency resolution in `settings.gradle.kts`:
@@ -27,6 +36,8 @@ dependencies {
     implementation("com.github.fethica.compose-popupbar:popupbar:0.1.0")
 }
 ```
+
+JitPack builds from git, so the version has to be something git can resolve: a tag that has been pushed (`git tag 0.1.0 && git push --tags`) or a commit hash. A version that only exists in `gradle.properties` will not resolve.
 
 ## Use a composite build locally
 
@@ -88,26 +99,32 @@ The bar itself expands the popup when tapped. Call the state methods from your o
 
 | Option | Value | Effect |
 | --- | --- | --- |
-| `PopupBarStyle` | `Floating` | 64 dp rounded card with horizontal and bottom margins. |
+| `PopupBarStyle` | `Floating` (default) | 64 dp rounded card with horizontal and bottom margins. |
 | `PopupBarStyle` | `FloatingCompact` | Shorter 48 dp floating card. |
 | `PopupBarStyle` | `Prominent` | 64 dp edge-to-edge bar flush with the docking bar. |
 | `PopupBarStyle` | `Compact` | 40 dp edge-to-edge bar with compact artwork. |
-| `PopupInteractionStyle` | `Drag` | The bar and expanded content continuously follow a vertical drag. |
+| `PopupInteractionStyle` | `Drag` (default) | The bar and expanded content continuously follow a vertical drag. |
 | `PopupInteractionStyle` | `Snap` | Commits after the distance or velocity threshold, then animates to an anchor. |
 | `PopupInteractionStyle` | `Scroll` | Adds nested-scroll handoff for long popup content. |
 | `PopupInteractionStyle` | `None` | Disables swipes; bar taps, close controls, and state methods still work. |
-| `PopupCloseButtonStyle` | `Grabber` | Wide, accessible drag-handle collapse target. |
+| `PopupCloseButtonStyle` | `Grabber` (default) | Wide, accessible drag-handle collapse target. |
 | `PopupCloseButtonStyle` | `Chevron` | Down-chevron icon button. |
 | `PopupCloseButtonStyle` | `Round` | Filled tonal circular close button. |
 | `PopupCloseButtonStyle` | `None` | Draws no close control. |
 | `PopupCloseButtonPosition` | `Leading` | Places the close control at logical start. |
-| `PopupCloseButtonPosition` | `Center` | Centers the close control. |
+| `PopupCloseButtonPosition` | `Center` (default) | Centers the close control. |
 | `PopupCloseButtonPosition` | `Trailing` | Places the close control at logical end. |
-| `PopupProgressStyle` | `None` | Draws no bar progress strip. |
+| `PopupProgressStyle` | `None` (default) | Draws no bar progress strip. |
 | `PopupProgressStyle` | `Top` | Draws the progress strip along the bar's top edge. |
 | `PopupProgressStyle` | `Bottom` | Draws the progress strip along the bar's bottom edge. |
 
-`PopupHost` also accepts `containerColor`, an optional scrim color, and a haptics toggle. `containerColor` paints the whole morph: it is the collapsed bar's background and the same surface grows into the full-screen card, which is why it lives on the host and not in `PopupBarColors`. `PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override.
+`PopupHost` also accepts:
+
+- **`containerColor`**: the surface the morph is made of. It is the collapsed bar's background, and the same surface grows into the full-screen card. That is why it lives on the host rather than in `PopupBarColors`, where a second value could only disagree with what is painted.
+- **`scrimColor`**: drawn over the screen as the popup expands, `Color.Transparent` by default. In a light theme give it a translucent dark value: against a pale screen an unscrimmed morph reads as a flat wipe rather than a card growing out of the bar.
+- **`hapticsEnabled`**: threshold and settle feedback during user gestures. Programmatic transitions never buzz.
+
+`PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override.
 
 ## State API
 
@@ -129,7 +146,12 @@ All transitions are suspending and respect the `confirmValueChange` callback pas
 
 ## Designing the content
 
-Popup content is measured at the full host size throughout the morph, so it does not reflow while dragging. Apply `statusBarsPadding()` to your content, and leave about 48 dp at the top for the host's close affordance.
+Popup content is measured at the full host size throughout the morph, so it does not reflow while dragging. The host applies no window insets to it, so apply `statusBarsPadding()` inside your own content, and then leave 48 dp below the status-bar inset clear: that band belongs to the host's close affordance, whichever `PopupCloseButtonStyle` is in use.
+
+Insets elsewhere:
+
+- **`bottomBar`** owns its `navigationBars` inset, exactly like a plain `NavigationBar` outside this library. The host does not add one. Only when `bottomBar` is empty does the host apply the navigation-bar inset itself, so the popup bar does not sit under the gesture pill.
+- **`content`** receives `PaddingValues` with a bottom value only: the docking bar plus, once presented, the popup bar and its margins. Every other edge is yours, including the status bar.
 
 When using shared artwork, pass one composable through `popupImage` and reserve its expanded destination exactly once:
 
@@ -168,7 +190,7 @@ Call it at most once, and only when the host was given a `popupImage`. The corne
 
 ## Accessibility and RTL
 
-The collapsed bar exposes one merged button node with a default description of `"title, subtitle"`, an expand action, and progress semantics when progress is supplied. Collapsed popup content is hidden from accessibility services, while close controls use localized library strings in English, French, and Arabic.
+The collapsed bar exposes one merged node with `Role.Button`, a default description of `"title, subtitle"`, a click action labelled "Expand" (`onClickLabel`, localized), and progress semantics when progress is supplied. Behind an expanded popup the screen content and the docking bar are hidden from accessibility services, so TalkBack cannot walk off the popup into UI the user cannot see. Collapsed popup content is hidden from accessibility services, while close controls use localized library strings in English, French, and Arabic.
 
 Layout uses logical start/end positions. Leading and trailing controls mirror in RTL, and the seekable progress strip reverses its fill and touch mapping. The sample app has live RTL and dark-theme toggles for verification.
 
