@@ -10,7 +10,7 @@ class PopupGesturesTest {
     @Test fun `upward user scroll expands the popup before content scrolls`() = runTest {
         val state = PopupState(PopupValue.Collapsed) { true }
         state.updateTravel(1_000f)
-        val connection = PopupNestedScrollConnection(state, this, velocityThresholdPx = 1_000f)
+        val connection = PopupNestedScrollConnection(state, velocityThresholdPx = 1_000f)
 
         val consumed = connection.onPreScroll(
             available = Offset(0f, -200f),
@@ -24,7 +24,7 @@ class PopupGesturesTest {
     @Test fun `downward leftover scroll collapses the popup`() = runTest {
         val state = PopupState(PopupValue.Expanded) { true }
         state.updateTravel(1_000f)
-        val connection = PopupNestedScrollConnection(state, this, velocityThresholdPx = 1_000f)
+        val connection = PopupNestedScrollConnection(state, velocityThresholdPx = 1_000f)
 
         val consumed = connection.onPostScroll(
             consumed = Offset.Zero,

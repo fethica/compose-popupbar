@@ -196,8 +196,8 @@ public fun PopupHost(
         positionalThreshold = positionalThreshold,
         animationSpec = PopupDefaults.snapSpec,
     )
-    val nestedScrollConnection = remember(state, scope, velocityThresholdPx) {
-        PopupNestedScrollConnection(state, scope, velocityThresholdPx)
+    val nestedScrollConnection = remember(state, velocityThresholdPx) {
+        PopupNestedScrollConnection(state, velocityThresholdPx)
     }
 
     CompositionLocalProvider(
@@ -454,7 +454,6 @@ public fun PopupHost(
                                     ),
                                 )
                                 shadowElevation = if (p in 0.01f..0.99f) 4.dp.toPx() else 0f
-                                translationY = (1f - presented) * (barHeightPx + bMargin)
                                 alpha = if (presented <= 0f) 0f else 1f
                             },
                     ) { popupImage() }
@@ -465,7 +464,7 @@ public fun PopupHost(
                 screenPlaceable.place(0, 0)
                 bottomBarPlaceable.place(0, height - bottomBarHeight)
                 if (popupPlaced) popupPlaceable.place(0, 0)
-                imagePlaceable?.place(0, 0)
+                if (popupPlaced) imagePlaceable?.place(0, 0)
             }
         }
     }

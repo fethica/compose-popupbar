@@ -62,7 +62,6 @@ internal fun Modifier.popupSnapGesture(
 /** Hands unconsumed scroll deltas between scrollable popup content and the popup anchors. */
 internal class PopupNestedScrollConnection(
     private val state: PopupState,
-    private val scope: CoroutineScope,
     private val velocityThresholdPx: Float,
 ) : NestedScrollConnection {
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -92,15 +91,19 @@ internal class PopupNestedScrollConnection(
         val velocity = available.y
         return if (velocity < 0f && state.draggable.requireOffset() > 0f) {
             settle(velocity)
-            available
+            Velocity(0f, available.y)
         } else {
             Velocity.Zero
         }
     }
 
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-        settle(available.y)
-        return available
+        return if (available.y != 0f) {
+            settle(available.y)
+            Velocity(0f, available.y)
+        } else {
+            Velocity.Zero
+        }
     }
 
     private suspend fun settle(velocity: Float) {
