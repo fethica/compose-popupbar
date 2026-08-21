@@ -3,6 +3,5 @@
     <string name="popupbar_expand">توسيع</string>
     <string name="popupbar_collapse">طي</string>
     <string name="popupbar_close">إغلاق</string>
-    <string name="popupbar_progress">التقدم</string>
     <string name="popupbar_seek">الانتقال إلى موضع</string>
 </resources>

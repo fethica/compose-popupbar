@@ -67,6 +67,8 @@ class PopupGeometryTest {
         assertEquals(240f, contentBottomInset(240f, 0f, 192f, 0f, 24f), 0f)
         assertEquals(456f, contentBottomInset(240f, 1f, 192f, 0f, 24f), 0f)
         assertEquals(348f, contentBottomInset(240f, 0.5f, 192f, 0f, 24f), 0f)
+        // A floating bar reserves its top margin too, which is what the host now passes.
+        assertEquals(480f, contentBottomInset(240f, 1f, 192f, 24f, 24f), 0f)
     }
 
     @Test fun `bottom bar slides out by its own height`() {

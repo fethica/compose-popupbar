@@ -186,6 +186,9 @@ public fun PopupHost(
 
     // --- Predictive back ----------------------------------------------------------------------
     // The popup peels back toward the bar while the gesture is live, then collapses or springs back.
+    // NoCollectCallFound: lint only recognises a `collect` written inline in the handler body; the
+    // collection happens one call deep, inside handleBackGesture (extracted so it can be tested).
+    @Suppress("NoCollectCallFound")
     PredictiveBackHandler(enabled = state.isExpanded) { events ->
         state.handleBackGesture(events.map { it.progress }, springBackScope = scope)
     }
@@ -251,7 +254,9 @@ public fun PopupHost(
                 bottomBarHeight = (bottomBarHeight + dockingInset).toFloat(),
                 presentation = state.presentation,
                 barHeight = barHeightPx.toFloat(),
-                barTopMargin = 0f,
+                // The floating card's bottom margin is mirrored above it, so a list scrolled to
+                // its end still has breathing room instead of ending flush against the card.
+                barTopMargin = bMargin.toFloat(),
                 barBottomMargin = bMargin.toFloat(),
             )
             val insetDp = insetPx.toDp()

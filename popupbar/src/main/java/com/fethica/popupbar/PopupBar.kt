@@ -35,24 +35,85 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 
-/** Spec §3.3: fixed colors for one [PopupBar] instance. Build one with [PopupBarDefaults.colors]. */
+/**
+ * Spec §3.3: fixed colors for one [PopupBar] instance. Build one with [PopupBarDefaults.colors].
+ *
+ * Deliberately not a `data class`: the generated `componentN()`/`copy()` pin the property list into
+ * the ABI, so adding a colour later would be a binary-incompatible change for every consumer.
+ * `copy`, `equals` and `hashCode` are written out instead, the way Material 3's own colour holders
+ * are.
+ */
 @Immutable
-public data class PopupBarColors(
+public class PopupBarColors(
     public val containerColor: Color,
     public val titleColor: Color,
     public val subtitleColor: Color,
     public val progressColor: Color,
     public val progressTrackColor: Color,
     public val actionColor: Color,
-)
+) {
+    public fun copy(
+        containerColor: Color = this.containerColor,
+        titleColor: Color = this.titleColor,
+        subtitleColor: Color = this.subtitleColor,
+        progressColor: Color = this.progressColor,
+        progressTrackColor: Color = this.progressTrackColor,
+        actionColor: Color = this.actionColor,
+    ): PopupBarColors = PopupBarColors(
+        containerColor = containerColor,
+        titleColor = titleColor,
+        subtitleColor = subtitleColor,
+        progressColor = progressColor,
+        progressTrackColor = progressTrackColor,
+        actionColor = actionColor,
+    )
 
-/** Spec §3.3: title/subtitle text styles for one [PopupBar] instance. Build one with [PopupBarDefaults.textStyles]. */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PopupBarColors) return false
+        return containerColor == other.containerColor &&
+            titleColor == other.titleColor &&
+            subtitleColor == other.subtitleColor &&
+            progressColor == other.progressColor &&
+            progressTrackColor == other.progressTrackColor &&
+            actionColor == other.actionColor
+    }
+
+    override fun hashCode(): Int {
+        var result = containerColor.hashCode()
+        result = 31 * result + titleColor.hashCode()
+        result = 31 * result + subtitleColor.hashCode()
+        result = 31 * result + progressColor.hashCode()
+        result = 31 * result + progressTrackColor.hashCode()
+        result = 31 * result + actionColor.hashCode()
+        return result
+    }
+}
+
+/**
+ * Spec §3.3: title/subtitle text styles for one [PopupBar] instance. Build one with
+ * [PopupBarDefaults.textStyles]. Not a `data class`, for the same ABI reason as [PopupBarColors].
+ */
 @Immutable
-public data class PopupBarTextStyles(
+public class PopupBarTextStyles(
     public val title: TextStyle,
     public val subtitle: TextStyle,
-)
+) {
+    public fun copy(
+        title: TextStyle = this.title,
+        subtitle: TextStyle = this.subtitle,
+    ): PopupBarTextStyles = PopupBarTextStyles(title = title, subtitle = subtitle)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PopupBarTextStyles) return false
+        return title == other.title && subtitle == other.subtitle
+    }
+
+    override fun hashCode(): Int = 31 * title.hashCode() + subtitle.hashCode()
+}
 
 /**
  * Default colors, text styles and per-[PopupBarStyle] geometry for [PopupBar].
@@ -176,7 +237,17 @@ public fun PopupBar(
             },
     ) {
         if (progress != null && progressStyle == PopupProgressStyle.Top) {
-            PopupProgressStrip(progress, onSeek, colors, Modifier.align(Alignment.TopCenter))
+            // The Row below is composed after this strip, so without a raised z-index it is
+            // hit-tested first and the action buttons — whose 48dp targets reach up into the strip's
+            // band — swallow every touch meant for a `Top` seekable hairline. `Bottom` needs no such
+            // hoist: it is already the last child. The strip is 2dp/3dp of ink at the very top edge,
+            // so drawing it above the Row changes nothing visually.
+            PopupProgressStrip(
+                progress,
+                onSeek,
+                colors,
+                Modifier.align(Alignment.TopCenter).zIndex(1f),
+            )
         }
         Row(
             Modifier

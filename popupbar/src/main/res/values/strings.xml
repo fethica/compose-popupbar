@@ -3,6 +3,5 @@
     <string name="popupbar_expand">Expand</string>
     <string name="popupbar_collapse">Collapse</string>
     <string name="popupbar_close">Close</string>
-    <string name="popupbar_progress">Progress</string>
     <string name="popupbar_seek">Seek</string>
 </resources>
