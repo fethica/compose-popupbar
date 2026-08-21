@@ -1,5 +1,6 @@
 package com.fethica.popupbar
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,11 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -91,6 +90,12 @@ public object PopupBarDefaults {
     public fun bottomMargin(style: PopupBarStyle): Dp = style.metrics().bottomMargin
     public fun cornerRadius(style: PopupBarStyle): Dp = style.metrics().cornerRadius
     public fun shadowElevation(style: PopupBarStyle): Dp = style.metrics().shadowElevation
+
+    /** Forwards [PopupDefaults.snapSpec]; [PopupDefaults] stays the canonical owner. */
+    public val snapSpec: AnimationSpec<Float> get() = PopupDefaults.snapSpec
+
+    /** Forwards [PopupDefaults.presentationSpec]; [PopupDefaults] stays the canonical owner. */
+    public val presentationSpec: AnimationSpec<Float> get() = PopupDefaults.presentationSpec
 }
 
 /** Stable test tag for the bar's image slot, independent of [PopupBarStyle]. */
@@ -109,10 +114,14 @@ internal fun BarImageSlot(modifier: Modifier) {
  * The default popup bar. Spec §3.3: `[image slot] [title / subtitle, weight 1, marquee] [actions]`
  * with an optional progress hairline spanning the full width.
  *
- * [PopupBar] does not add its own tap target: [PopupHost] wraps `popupBar()` in a bar-frame box
- * that already carries the tap-to-expand `clickable` and the `popupbar:bar` test tag. The
- * `onClick` semantics set here only label that action for accessibility services; the merged node
- * is what TalkBack actually announces and activates.
+ * [PopupBar] does not add its own tap target or its own accessibility merge boundary: [PopupHost]
+ * wraps `popupBar()` in a bar-frame box that already carries the tap-to-expand `clickable`, the
+ * `popupbar:bar` test tag, and `Modifier.semantics(mergeDescendants = true)` placed before that
+ * `clickable` so the click's `Role`/`onClick` and this composable's `contentDescription`/
+ * `progressBarRangeInfo` land in the same merged node. This composable's own `Modifier.semantics {}`
+ * therefore does **not** set `mergeDescendants = true` and does **not** set `onClick`: doing either
+ * here would create a second, independent accessibility node (TalkBack seeing two stops over one
+ * bar) instead of contributing properties up into the host's merge.
  */
 @Composable
 public fun PopupBar(
@@ -132,18 +141,17 @@ public fun PopupBar(
     val style = LocalPopupBarStyle.current
     val metrics = style.metrics()
     val hasImage = LocalPopupHasImage.current
-    val expandLabel = stringResource(R.string.popupbar_expand)
     val description = contentDescription
         ?: listOfNotNull(title, subtitle?.takeIf { it.isNotBlank() }).joinToString(", ")
     Box(
         modifier
             .fillMaxSize()
-            .semantics(mergeDescendants = true) {
+            // No `mergeDescendants = true` and no `onClick` here: PopupHost's bar-frame box is the
+            // one merge boundary (it sits above this composable and carries the real `clickable`).
+            // These properties merge up into that single node instead of creating a second one.
+            .semantics {
                 this.contentDescription = description
                 role = Role.Button
-                // The host's own clickable (on the bar-frame box wrapping this composable)
-                // performs the expand; this call only documents the action for a11y.
-                onClick(label = expandLabel) { false }
                 if (progress != null) {
                     progressBarRangeInfo = ProgressBarRangeInfo(progress().coerceIn(0f, 1f), 0f..1f)
                 }
@@ -167,12 +175,16 @@ public fun PopupBar(
                 Spacer(Modifier.width(12.dp))
             }
             Column(Modifier.weight(1f)) {
+                // basicMarquee measures at unbounded width; Ellipsis truncation pre-empts that
+                // measurement and silently keeps the text from ever scrolling, so Clip is the
+                // canonical pairing whenever marquee is enabled. Ellipsis only when it's off.
+                val textOverflow = if (marquee) TextOverflow.Clip else TextOverflow.Ellipsis
                 Text(
                     text = title,
                     style = textStyles.title,
                     color = colors.titleColor,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    overflow = textOverflow,
                     modifier = if (marquee) {
                         Modifier.basicMarquee(initialDelayMillis = marqueeInitialDelayMillis)
                     } else {
@@ -185,7 +197,7 @@ public fun PopupBar(
                         style = textStyles.subtitle,
                         color = colors.subtitleColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = textOverflow,
                         modifier = if (marquee) {
                             Modifier.basicMarquee(initialDelayMillis = marqueeInitialDelayMillis)
                         } else {

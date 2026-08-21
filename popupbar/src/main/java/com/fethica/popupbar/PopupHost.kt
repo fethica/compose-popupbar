@@ -320,6 +320,11 @@ public fun PopupHost(
                                 .fillMaxSize()
                                 .testTag("popupbar:bar")
                                 .graphicsLayer { alpha = barAlpha(state.progress) }
+                                // One merged accessibility node for the whole bar: this must sit
+                                // BEFORE `clickable` below so the click's Role/onClick land inside
+                                // the same merge boundary as `popupBar()`'s contentDescription and
+                                // progressBarRangeInfo, instead of TalkBack seeing two stops.
+                                .semantics(mergeDescendants = true) {}
                                 .then(
                                     if (barTappable) {
                                         // Spec: a tap expands under every interaction style,
