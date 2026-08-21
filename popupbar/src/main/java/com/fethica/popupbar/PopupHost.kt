@@ -85,6 +85,24 @@ private const val BarPlacementThreshold = 0.3f   // barAlpha() has reached 0: st
 private const val ContentInertThreshold = 0.2f   // contentAlpha() starts rising
 private const val CloseVisibleThreshold = 0.6f   // closeButtonAlpha() starts rising
 
+/**
+ * Receiver of [PopupHost]'s `popupBar` slot.
+ *
+ * A custom bar needs this for one reason: reserving the rectangle the host lands `popupImage` in
+ * while collapsed. Without it only the built-in [PopupBar] could take part in the travelling
+ * artwork, and any hand-written bar silently lost it.
+ */
+@Stable
+public interface PopupBarScope {
+    /**
+     * Reserves the collapsed thumbnail rectangle for the host's `popupImage`. Draws nothing itself:
+     * give it the size you want the thumbnail to be. The corner radius comes from the host's
+     * [PopupBarStyle]. Call it at most once inside `popupBar`.
+     */
+    @Composable
+    public fun PopupBarImageSlot(modifier: Modifier)
+}
+
 @Stable
 public interface PopupContentScope {
     public val state: PopupState
@@ -111,7 +129,7 @@ private enum class Slot { Screen, BottomBar, Popup, Image }
 @Composable
 public fun PopupHost(
     state: PopupState,
-    popupBar: @Composable () -> Unit,
+    popupBar: @Composable PopupBarScope.() -> Unit,
     popupContent: @Composable PopupContentScope.() -> Unit,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
@@ -130,6 +148,7 @@ public fun PopupHost(
     val haptic = LocalHapticFeedback.current
     val dragInteractions = remember { MutableInteractionSource() }
     val contentScope = remember(state) { PopupContentScopeImpl(state) }
+    val barScope = remember { PopupBarScopeImpl }
     val expandLabel = stringResource(R.string.popupbar_expand)
     val imageRegistry = remember { PopupImageRegistry() }
     var hostCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -399,7 +418,7 @@ public fun PopupHost(
                                     },
                                 ),
                         ) {
-                            popupBar()
+                            barScope.popupBar()
                             if (!barTappable) Box(Modifier.fillMaxSize().absorbPointers())
                         }
                     }
@@ -433,10 +452,15 @@ public fun PopupHost(
                             .layout { measurable, _ ->
                                 val barSlot = imageRegistry.barSlot
                                 val contentSlot = imageRegistry.contentSlot
+                                // With only one slot reported there is nothing to travel between,
+                                // so the image may only be drawn at the end of the morph it belongs
+                                // to. Falling back to the lone rectangle at *any* progress is what
+                                // made a missing bar slot paint the artwork at its expanded size and
+                                // position over a collapsed bar.
                                 val rect = when {
                                     barSlot == null && contentSlot == null -> null
-                                    barSlot == null -> contentSlot
-                                    contentSlot == null -> barSlot
+                                    barSlot == null -> if (state.progress >= 1f) contentSlot else null
+                                    contentSlot == null -> if (state.progress <= 0f) barSlot else null
                                     else -> imageOverlayRect(state.progress, barSlot, contentSlot)
                                 }
                                 if (rect == null) {
@@ -514,6 +538,14 @@ private fun closeButtonAlignment(position: PopupCloseButtonPosition): Alignment 
     PopupCloseButtonPosition.Leading -> Alignment.TopStart
     PopupCloseButtonPosition.Center -> Alignment.TopCenter
     PopupCloseButtonPosition.Trailing -> Alignment.TopEnd
+}
+
+/** Stateless: the slot resolves its host through composition locals, exactly like [BarImageSlot]. */
+private object PopupBarScopeImpl : PopupBarScope {
+    @Composable
+    override fun PopupBarImageSlot(modifier: Modifier) {
+        BarImageSlot(modifier)
+    }
 }
 
 private class PopupContentScopeImpl(override val state: PopupState) : PopupContentScope {

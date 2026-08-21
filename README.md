@@ -153,6 +153,19 @@ PopupHost(
 
 The host keeps that artwork composable alive and moves it between the bar thumbnail and content slot. For lyrics, queues, or other long content, use `PopupInteractionStyle.Scroll` with a nested-scroll child such as `LazyColumn`.
 
+`PopupBar` reserves the collapsed end of that trip for you. A hand-written bar reserves it through `PopupBarScope`, the receiver of the `popupBar` slot:
+
+```kotlin
+popupBar = {
+    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        PopupBarImageSlot(Modifier.size(48.dp))
+        Text("Title", Modifier.weight(1f))
+    }
+}
+```
+
+Call it at most once, and only when the host was given a `popupImage`. The corner radius follows the `PopupBarStyle`. If either end of the trip is missing, the host draws the artwork only at the end that exists, and only once the morph has fully settled there.
+
 ## Accessibility and RTL
 
 The collapsed bar exposes one merged button node with a default description of `"title, subtitle"`, an expand action, and progress semantics when progress is supplied. Collapsed popup content is hidden from accessibility services, while close controls use localized library strings in English, French, and Arabic.
