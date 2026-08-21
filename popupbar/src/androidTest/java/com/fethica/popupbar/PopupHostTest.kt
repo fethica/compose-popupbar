@@ -28,6 +28,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -188,9 +190,9 @@ class PopupHostTest {
     }
 
     /**
-     * The seekable strip is a band along one edge of the bar, and the action buttons' 48dp targets
-     * reach into that band. Both have to work: seeking anywhere the bar has no other control, and
-     * the action firing when its own button is pressed, whichever edge the strip is on.
+     * The seekable strip is a thin band along one edge of the bar, and it has to share that band
+     * with two other gestures: the action buttons' 48dp targets reach into it, and a plain tap has
+     * to keep expanding the popup. Seeking is drag-only precisely so both stay possible.
      */
     private fun seekVersusActions(style: PopupProgressStyle) {
         var seeked: Float? = null
@@ -211,14 +213,14 @@ class PopupHostTest {
                 )
             },
         )
+        val strip = rule.onNodeWithTag("popupbar:progress", useUnmergedTree = true)
 
-        // Inside the strip's band, over the title: nothing else claims it, so it seeks.
-        rule.onNodeWithTag("popupbar:progress", useUnmergedTree = true).performTouchInput {
-            click(Offset(width * 0.45f, height / 2f))
-        }
+        // A horizontal drag along the band seeks, and does nothing else.
+        strip.performTouchInput { swipeRight() }
         rule.waitForIdle()
-        assertNotNull("a press in the strip's band must seek", seeked)
+        assertNotNull("a horizontal drag along the band must seek", seeked)
         assertEquals("seeking must not fire the action", 0, actionClicks)
+        assertTrue("seeking must not expand the popup", state.isCollapsed)
 
         // The edge of the action button that overlaps the same band still belongs to the button.
         seeked = null
@@ -234,6 +236,26 @@ class PopupHostTest {
         rule.waitForIdle()
         assertEquals("the action button must win inside its own bounds", 1, actionClicks)
         assertNull("pressing the action must not seek", seeked)
+        assertTrue(state.isCollapsed)
+
+        // A tap on the band is not a seek: it falls through to the host's tap-to-expand.
+        strip.performTouchInput { click() }
+        rule.waitForIdle()
+        assertNull("a tap on the band must not seek", seeked)
+        assertTrue("a tap on the band must expand", state.isExpanded)
+
+        // Neither is a vertical drag: horizontal slop loses, nothing is consumed, and the popup
+        // layer's own draggable takes the gesture.
+        rule.runOnIdle { animationScope.launch { state.collapse() } }
+        rule.waitForIdle()
+        // Started on the band but travelling well past it: `swipeUp()` alone only spans the band's
+        // own 16dp, which clears neither the positional nor the velocity threshold.
+        strip.performTouchInput {
+            swipe(start = center, end = center - Offset(0f, 800f), durationMillis = 200)
+        }
+        rule.waitForIdle()
+        assertNull("a vertical swipe from the band must not seek", seeked)
+        assertTrue("a vertical swipe from the band must expand", state.isExpanded)
     }
 
     @Test

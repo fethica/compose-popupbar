@@ -118,7 +118,7 @@ The bar itself expands the popup when tapped. Call the state methods from your o
 | `PopupProgressStyle` | `Top` | Draws the progress strip along the bar's top edge. |
 | `PopupProgressStyle` | `Bottom` | Draws the progress strip along the bar's bottom edge. |
 
-When `PopupBar` is given an `onSeek`, the strip claims a thin touch band along its edge for dragging and tapping to a position. Action buttons still win inside their own bounds, so a play/pause button whose target reaches into that band keeps working.
+When `PopupBar` is given an `onSeek`, seek by dragging along the hairline; taps always expand. The strip claims a 16 dp touch band hugging its edge for that drag and nothing else: a tap on the band falls through to the popup, a vertical swipe from it still drags the popup open, and an action button whose target reaches into the band keeps firing inside its own bounds. The hairline is 2 dp flush against the edge whether or not it is seekable, thickening by a dp only while a seek drag is live.
 
 `PopupHost` also accepts:
 

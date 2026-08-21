@@ -242,6 +242,7 @@ public fun PopupBar(
                 progress,
                 onSeek,
                 colors,
+                progressStyle,
                 Modifier.align(
                     if (progressStyle == PopupProgressStyle.Top) {
                         Alignment.TopCenter

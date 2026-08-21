@@ -1,7 +1,6 @@
 package com.fethica.popupbar
 
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,12 +35,36 @@ internal fun seekFraction(x: Float, width: Float, rtl: Boolean): Float {
     return if (rtl) 1f - t else t
 }
 
-/** A 2dp hairline; when [onSeek] is given, a 24dp-tall touch strip that drags/taps to a fraction and seeks on release. */
+/** The hairline itself, identical whether or not the strip is seekable. */
+private val HairlineThickness = 2.dp
+
+/** The hairline thickens by a dp while a seek drag is live, as the only touch cue. */
+private val ActiveHairlineThickness = 3.dp
+
+/**
+ * Touch band for the seek drag. It hugs the bar's edge rather than being centred on the hairline, so
+ * it never reaches the title or covers more than a strip of the bar.
+ */
+private val SeekBandHeight = 16.dp
+
+/**
+ * A 2dp hairline flush against the bar's [style] edge.
+ *
+ * When [onSeek] is given the node grows to a [SeekBandHeight] touch band along that same edge, but
+ * the hairline stays exactly where it is: the ink is pixel-identical to the non-seekable case, only
+ * thickening while a drag is live.
+ *
+ * Seeking is **drag only**. There is deliberately no tap-to-seek: a tap on the band has to fall
+ * through to the host's tap-to-expand, and a vertical drag has to reach the popup layer's
+ * `anchoredDraggable` — `detectHorizontalDragGestures` cancels without consuming when vertical slop
+ * wins, which is what lets both happen.
+ */
 @Composable
 internal fun PopupProgressStrip(
     progress: () -> Float,
     onSeek: ((Float) -> Unit)?,
     colors: PopupBarColors,
+    style: PopupProgressStyle,
     modifier: Modifier = Modifier,
 ) {
     var dragFraction by remember { mutableStateOf<Float?>(null) }
@@ -53,7 +76,7 @@ internal fun PopupProgressStrip(
     Box(
         modifier
             .fillMaxWidth()
-            .height(if (onSeek != null) 24.dp else 2.dp)
+            .height(if (onSeek != null) SeekBandHeight else HairlineThickness)
             .testTag("popupbar:progress")
             .then(
                 if (onSeek == null) {
@@ -72,16 +95,19 @@ internal fun PopupProgressStrip(
                                 onDragCancel = { dragFraction = null },
                             )
                         }
-                        .pointerInput(onSeek, rtl) {
-                            detectTapGestures { onSeek(seekFraction(it.x, size.width.toFloat(), rtl)) }
-                        }
                 },
             )
             .drawBehind {
                 // The only place `progress()` is read every frame: a draw-phase closure, not a
                 // composable-body read, so a ticking position never recomposes PopupBar.
-                val trackH = if (onSeek != null) 3.dp.toPx() else 2.dp.toPx()
-                val y = (size.height - trackH) / 2f
+                val trackH = if (dragFraction != null) {
+                    ActiveHairlineThickness.toPx()
+                } else {
+                    HairlineThickness.toPx()
+                }
+                // Flush against the bar's edge, not centred in the touch band: a seekable strip must
+                // draw the same hairline in the same place as a non-seekable one.
+                val y = if (style == PopupProgressStyle.Top) 0f else size.height - trackH
                 val isRtl = layoutDirection == LayoutDirection.Rtl
                 drawRoundRect(
                     color = colors.progressTrackColor,
