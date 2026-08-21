@@ -120,6 +120,7 @@ public fun PopupHost(
     interactionStyle: PopupInteractionStyle = PopupInteractionStyle.Drag,
     closeButtonStyle: PopupCloseButtonStyle = PopupCloseButtonStyle.Grabber,
     closeButtonPosition: PopupCloseButtonPosition = PopupCloseButtonPosition.Center,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     scrimColor: Color = Color.Transparent,
     hapticsEnabled: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
@@ -128,7 +129,6 @@ public fun PopupHost(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val dragInteractions = remember { MutableInteractionSource() }
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val contentScope = remember(state) { PopupContentScopeImpl(state) }
     val expandLabel = stringResource(R.string.popupbar_expand)
     val imageRegistry = remember { PopupImageRegistry() }
@@ -294,6 +294,10 @@ public fun PopupHost(
                             translationY = (1f - presented) * (barHeightPx + bMargin)
                             alpha = if (presented <= 0f) 0f else 1f
                         }
+                        // One surface for the whole morph: while the clip is the bar's frame this
+                        // *is* the bar's background, and it grows into the full-screen card without
+                        // a crossfade. That is why the colour is a host parameter and not a
+                        // PopupBarColors field — two of them could only ever disagree.
                         .background(containerColor)
                         // The layer is opaque to hit testing whenever it is placed, whatever the
                         // interaction style: `background()` is a draw node, so without this a tap on

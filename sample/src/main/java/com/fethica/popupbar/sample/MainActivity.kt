@@ -91,6 +91,11 @@ private fun PopupBarSample(onDarkThemeChanged: (Boolean) -> Unit) {
             PopupHost(
                 state = state,
                 barStyle = options.barStyle,
+                containerColor = if (options.tintedCard) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
                 interactionStyle = options.interactionStyle,
                 closeButtonStyle = options.closeButtonStyle,
                 closeButtonPosition = options.closeButtonPosition,

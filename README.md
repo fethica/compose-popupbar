@@ -107,7 +107,7 @@ The bar itself expands the popup when tapped. Call the state methods from your o
 | `PopupProgressStyle` | `Top` | Draws the progress strip along the bar's top edge. |
 | `PopupProgressStyle` | `Bottom` | Draws the progress strip along the bar's bottom edge. |
 
-`PopupHost` also accepts an optional scrim color and haptics toggle. `PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override.
+`PopupHost` also accepts `containerColor`, an optional scrim color, and a haptics toggle. `containerColor` paints the whole morph: it is the collapsed bar's background and the same surface grows into the full-screen card, which is why it lives on the host and not in `PopupBarColors`. `PopupBar` accepts optional progress, seeking, action slots, colors, text styles, marquee configuration, and an accessibility-description override.
 
 ## State API
 

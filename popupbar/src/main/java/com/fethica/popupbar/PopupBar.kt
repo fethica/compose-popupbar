@@ -44,10 +44,13 @@ import androidx.compose.ui.zIndex
  * the ABI, so adding a colour later would be a binary-incompatible change for every consumer.
  * `copy`, `equals` and `hashCode` are written out instead, the way Material 3's own colour holders
  * are.
+ *
+ * There is deliberately no `containerColor` here: the surface behind the bar is the popup layer that
+ * morphs into the full-screen card, so it belongs to [PopupHost] (its `containerColor` parameter) and
+ * a per-bar copy could only ever disagree with what is actually painted.
  */
 @Immutable
 public class PopupBarColors(
-    public val containerColor: Color,
     public val titleColor: Color,
     public val subtitleColor: Color,
     public val progressColor: Color,
@@ -55,14 +58,12 @@ public class PopupBarColors(
     public val actionColor: Color,
 ) {
     public fun copy(
-        containerColor: Color = this.containerColor,
         titleColor: Color = this.titleColor,
         subtitleColor: Color = this.subtitleColor,
         progressColor: Color = this.progressColor,
         progressTrackColor: Color = this.progressTrackColor,
         actionColor: Color = this.actionColor,
     ): PopupBarColors = PopupBarColors(
-        containerColor = containerColor,
         titleColor = titleColor,
         subtitleColor = subtitleColor,
         progressColor = progressColor,
@@ -73,8 +74,7 @@ public class PopupBarColors(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PopupBarColors) return false
-        return containerColor == other.containerColor &&
-            titleColor == other.titleColor &&
+        return titleColor == other.titleColor &&
             subtitleColor == other.subtitleColor &&
             progressColor == other.progressColor &&
             progressTrackColor == other.progressTrackColor &&
@@ -82,8 +82,7 @@ public class PopupBarColors(
     }
 
     override fun hashCode(): Int {
-        var result = containerColor.hashCode()
-        result = 31 * result + titleColor.hashCode()
+        var result = titleColor.hashCode()
         result = 31 * result + subtitleColor.hashCode()
         result = 31 * result + progressColor.hashCode()
         result = 31 * result + progressTrackColor.hashCode()
@@ -124,14 +123,12 @@ public class PopupBarTextStyles(
 public object PopupBarDefaults {
     @Composable
     public fun colors(
-        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
         titleColor: Color = MaterialTheme.colorScheme.onSurface,
         subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         progressColor: Color = MaterialTheme.colorScheme.primary,
         progressTrackColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
         actionColor: Color = MaterialTheme.colorScheme.onSurface,
     ): PopupBarColors = PopupBarColors(
-        containerColor = containerColor,
         titleColor = titleColor,
         subtitleColor = subtitleColor,
         progressColor = progressColor,

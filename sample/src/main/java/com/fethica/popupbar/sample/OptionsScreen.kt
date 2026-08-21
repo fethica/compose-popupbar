@@ -48,6 +48,7 @@ internal data class SampleOptions(
     val dark: Boolean = false,
     val rtl: Boolean = false,
     val scrim: Boolean = false,
+    val tintedCard: Boolean = false,
     val haptics: Boolean = true,
 )
 
@@ -169,6 +170,9 @@ internal fun OptionsScreen(
             }
             SwitchRow("RTL layout", options.rtl) {
                 onOptionsChange(options.copy(rtl = it))
+            }
+            SwitchRow("Tinted card", options.tintedCard) {
+                onOptionsChange(options.copy(tintedCard = it))
             }
             SwitchRow("Scrim", options.scrim) {
                 onOptionsChange(options.copy(scrim = it))
