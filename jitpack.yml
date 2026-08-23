@@ -1,2 +1,4 @@
 jdk:
   - openjdk21
+install:
+  - ./gradlew :popupbar:publishToMavenLocal --console=plain --no-daemon

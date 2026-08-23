@@ -55,7 +55,12 @@ dependencies {
 }
 
 group = property("GROUP") as String
-version = property("VERSION_NAME") as String
+// On JitPack (JITPACK=true) the version must follow the tag being built (VERSION), so an rc tag does not publish a POM versioned with the release VERSION_NAME.
+version = if (System.getenv("JITPACK") == "true" && !System.getenv("VERSION").isNullOrBlank()) {
+    System.getenv("VERSION")
+} else {
+    property("VERSION_NAME") as String
+}
 
 publishing {
     publications {
