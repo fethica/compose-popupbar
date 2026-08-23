@@ -68,13 +68,13 @@ internal fun LibraryScreen(onTrackSelected: (String, String) -> Unit) {
         }
         items((1..60).toList(), key = { it }) { index ->
             ListItem(
-                headlineContent = { Text("Sourate ${surahName(index)}") },
-                supportingContent = { Text(reciterName(index)) },
+                headlineContent = { Text(trackTitle(index)) },
+                supportingContent = { Text(artistName(index)) },
                 leadingContent = {
                     Icon(Icons.Filled.LibraryMusic, contentDescription = null)
                 },
                 modifier = Modifier.clickable {
-                    onTrackSelected("Sourate ${surahName(index)}", reciterName(index))
+                    onTrackSelected(trackTitle(index), artistName(index))
                 },
             )
             HorizontalDivider()
@@ -248,20 +248,20 @@ private fun Enum<*>.displayName(): String = name.replace(
     " ",
 )
 
-private fun surahName(index: Int): String = when ((index - 1) % 8) {
-    0 -> "Al-Baqara"
-    1 -> "Ali 'Imran"
-    2 -> "An-Nisa"
-    3 -> "Al-Ma'idah"
-    4 -> "Al-An'am"
-    5 -> "Al-A'raf"
-    6 -> "Al-Anfal"
-    else -> "At-Tawbah"
+private fun trackTitle(index: Int): String = when ((index - 1) % 8) {
+    0 -> "Golden Hour"
+    1 -> "Paper Lanterns"
+    2 -> "Night Drive"
+    3 -> "Low Tide"
+    4 -> "Glass City"
+    5 -> "Northern Lights"
+    6 -> "Slow Motion"
+    else -> "Afterglow"
 }
 
-private fun reciterName(index: Int): String = when ((index - 1) % 4) {
-    0 -> "Mishary Rashid Alafasy"
-    1 -> "Abdul Basit Abdus Samad"
-    2 -> "Mahmoud Khalil Al-Husary"
-    else -> "Muhammad Siddiq Al-Minshawi"
+private fun artistName(index: Int): String = when ((index - 1) % 4) {
+    0 -> "The Lantern Club"
+    1 -> "Mira Solano"
+    2 -> "Orbit & Sons"
+    else -> "Juniper Wells"
 }

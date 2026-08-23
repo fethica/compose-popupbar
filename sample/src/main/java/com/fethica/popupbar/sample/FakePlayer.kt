@@ -7,8 +7,8 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 
 internal class FakePlayer {
-    var title by mutableStateOf("Sourate Al-Baqara")
-    var subtitle by mutableStateOf("Mishary Rashid Alafasy")
+    var title by mutableStateOf("Golden Hour")
+    var subtitle by mutableStateOf("The Lantern Club")
     var isPlaying by mutableStateOf(true)
     var positionMs by mutableLongStateOf(0L)
     val durationMs: Long = 30L * 60_000L
