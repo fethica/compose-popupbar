@@ -44,8 +44,8 @@ class PopupStateTest {
     }
 
     /**
-     * C1: a caller whose coroutine dies mid-`hide()` (FRadio's `LaunchedEffect(hasNowPlaying)` on a
-     * quick station switch) used to strand the bar half-slid with `hidden == false`, and every later
+     * C1: a caller whose coroutine dies mid-`hide()` (a host app's `LaunchedEffect(hasNowPlaying)` on a
+     * quick track switch) used to strand the bar half-slid with `hidden == false`, and every later
      * `present()` short-circuited on that flag. `hide()` now claims Hidden before it animates, so the
      * interrupted state is "hidden, still visible", which `present()` heals by animating the rest.
      */
