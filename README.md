@@ -49,7 +49,7 @@ dependencyResolutionManagement {
 
 // build.gradle.kts
 dependencies {
-    implementation("com.github.fethica.compose-popupbar:popupbar:0.1.0")
+    implementation("com.github.fethica:compose-popupbar:0.1.0")
 }
 ```
 

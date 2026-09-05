@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `publishToMavenLocal` now publishes as `com.github.fethica:compose-popupbar`, the coordinate JitPack serves, so local and published installs share one coordinate.
+
 ## 0.1.0 — 2026-09-05
 
 - Added hidden, collapsed, and expanded popup state with animated and immediate transitions.

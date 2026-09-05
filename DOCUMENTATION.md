@@ -29,11 +29,11 @@ Then add the library to the app module:
 
 ```kotlin
 dependencies {
-    implementation("com.github.fethica.compose-popupbar:popupbar:0.1.0")
+    implementation("com.github.fethica:compose-popupbar:0.1.0")
 }
 ```
 
-JitPack builds from git, so the version has to be something git can resolve: a tag that has been pushed (`git tag 0.1.0 && git push --tags`) or a commit hash. A version that only exists in `gradle.properties` will not resolve.
+JitPack builds from git, so the version has to be something git can resolve: a tag that has been pushed (`git tag 0.1.0 && git push --tags`) or a commit hash. A version that only exists in `gradle.properties` will not resolve. JitPack publishes the single `popupbar` module under the repository coordinate, so the group is `com.github.fethica` and the artifact is `compose-popupbar`.
 
 ## Use a composite build locally
 
@@ -42,14 +42,18 @@ Keep this repository beside your app and conditionally include it from the app's
 ```kotlin
 val popupBarCheckout = file("../compose-popupbar")
 if (popupBarCheckout.exists()) {
-    includeBuild(popupBarCheckout)
+    includeBuild(popupBarCheckout) {
+        dependencySubstitution {
+            substitute(module("com.github.fethica:compose-popupbar")).using(project(":popupbar"))
+        }
+    }
 }
 ```
 
 Keep the same published coordinate in the app module:
 
 ```kotlin
-implementation("com.github.fethica.compose-popupbar:popupbar:0.1.0")
+implementation("com.github.fethica:compose-popupbar:0.1.0")
 ```
 
 Gradle substitutes the included `:popupbar` project for that coordinate, so local and published builds use the same app code.

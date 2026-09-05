@@ -66,7 +66,7 @@ publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = project.group.toString()
-            artifactId = "popupbar"
+            artifactId = "compose-popupbar"
             version = project.version.toString()
             afterEvaluate { from(components["release"]) }
             pom {
