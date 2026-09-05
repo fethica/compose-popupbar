@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — 2026-08-21
+## 0.1.0 — 2026-09-05
 
 - Added hidden, collapsed, and expanded popup state with animated and immediate transitions.
 - Added the morphing popup host, travelling artwork slot, docking-bar motion, predictive back, drag haptics, and optional scrim.
