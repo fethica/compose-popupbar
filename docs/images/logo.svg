@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="compose-popupbar logo">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6A5AE0"/>
+      <stop offset="1" stop-color="#1FB8B0"/>
+    </linearGradient>
+    <linearGradient id="thumb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7A6BE8"/>
+      <stop offset="1" stop-color="#22B4AC"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0B1030" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <!-- tile -->
+  <rect x="0" y="0" width="512" height="512" rx="118" fill="url(#tile)"/>
+  <!-- the popup rising out of the bar: two ghost cards -->
+  <rect x="120" y="96" width="272" height="250" rx="40" fill="#FFFFFF" fill-opacity="0.14"/>
+  <rect x="96" y="150" width="320" height="220" rx="40" fill="#FFFFFF" fill-opacity="0.24"/>
+  <!-- grabber -->
+  <rect x="226" y="172" width="60" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.7"/>
+  <!-- the collapsed bar -->
+  <rect x="64" y="292" width="384" height="100" rx="30" fill="#FFFFFF" filter="url(#shadow)"/>
+  <rect x="86" y="308" width="68" height="68" rx="16" fill="url(#thumb)"/>
+  <!-- note glyph in the thumbnail -->
+  <path d="M129 322v30.5a9.5 9.5 0 1 1-6-8.8V330l-11 3v22.5a9.5 9.5 0 1 1-6-8.8V327l23-6.5z" fill="#FFFFFF" fill-opacity="0.95"/>
+  <!-- title / subtitle lines -->
+  <rect x="172" y="320" width="150" height="16" rx="8" fill="#2A2A38"/>
+  <rect x="172" y="350" width="104" height="12" rx="6" fill="#A0A0B0"/>
+  <!-- play -->
+  <path d="M382 320v44l38-22z" fill="#2A2A38"/>
+  <!-- docking bar dots -->
+  <circle cx="176" cy="442" r="10" fill="#FFFFFF" fill-opacity="0.9"/>
+  <circle cx="256" cy="442" r="10" fill="#FFFFFF" fill-opacity="0.5"/>
+  <circle cx="336" cy="442" r="10" fill="#FFFFFF" fill-opacity="0.5"/>
+</svg>

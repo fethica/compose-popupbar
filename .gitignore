@@ -7,3 +7,4 @@ build/
 /captures
 .kotlin/
 /RESULT-*.md
+docs/images/*.mp4

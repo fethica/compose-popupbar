@@ -1,10 +1,21 @@
-# compose-popupbar
+<p align="center">
+  <img src="docs/images/logo.png" width="128" alt="compose-popupbar logo: a white popup bar rising into a card on a purple-to-teal tile">
+</p>
+
+<h1 align="center">compose-popupbar</h1>
+
+<p align="center">
+  <a href="https://github.com/fethica/compose-popupbar/actions/workflows/ci.yml"><img src="https://github.com/fethica/compose-popupbar/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://jitpack.io/#fethica/compose-popupbar"><img src="https://jitpack.io/v/fethica/compose-popupbar.svg" alt="JitPack"></a>
+  <img src="https://img.shields.io/badge/API-24%2B-brightgreen" alt="API 24+">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
 A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked above your bottom navigation and morphs it into full-screen content through an interactive, interruptible transition. Inspired by, and gratefully crediting, [LNPopupController](https://github.com/LeoNatan/LNPopupController): the library owns presentation and gestures while your app supplies all content, artwork, progress, and actions.
 
-| Collapsed | Mid-morph | Expanded |
-| --- | --- | --- |
-| ![A floating popup bar above bottom navigation](docs/images/popupbar-collapsed.png) | ![The popup bar morphing into full-screen content](docs/images/popupbar-mid-morph.png) | ![Expanded popup content](docs/images/popupbar-expanded.png) |
+<p align="center">
+  <img src="docs/images/popupbar-demo.gif" width="320" alt="The sample app's floating popup bar dragged open into a full-screen player and back, then picking another track presents the player again">
+</p>
 
 ## Features
 
@@ -15,6 +26,16 @@ A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked ab
 - Suspending state API: `present()`, `expand()`, `collapse()`, `hide()`, with continuous `progress` and `presentation` fractions
 - Accessibility built in: one merged bar node, hidden background content behind the expanded popup, localized close controls
 - Full RTL mirroring, verified with the sample app's live RTL and dark-theme toggles
+
+## Bar styles
+
+Four `PopupBarStyle` values, all docked above the same bottom navigation. Pick one on `PopupHost`; the morph and the gestures stay the same.
+
+| Floating (default) | Floating compact |
+| --- | --- |
+| ![A 64 dp rounded popup bar card with side and bottom margins above the navigation bar](docs/images/style-floating.png) | ![A shorter 48 dp rounded popup bar card above the navigation bar](docs/images/style-floating-compact.png) |
+| **Prominent** | **Compact** |
+| ![A 64 dp edge-to-edge popup bar flush with the navigation bar](docs/images/style-prominent.png) | ![A 40 dp edge-to-edge popup bar with small artwork flush with the navigation bar](docs/images/style-compact.png) |
 
 ## Install
 
