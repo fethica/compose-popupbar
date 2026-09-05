@@ -22,8 +22,8 @@
   <!-- the collapsed bar -->
   <rect x="64" y="292" width="384" height="100" rx="30" fill="#FFFFFF" filter="url(#shadow)"/>
   <rect x="86" y="308" width="68" height="68" rx="16" fill="url(#thumb)"/>
-  <!-- note glyph in the thumbnail -->
-  <path d="M129 322v30.5a9.5 9.5 0 1 1-6-8.8V330l-11 3v22.5a9.5 9.5 0 1 1-6-8.8V327l23-6.5z" fill="#FFFFFF" fill-opacity="0.95"/>
+  <!-- single eighth note in the thumbnail -->
+  <path transform="translate(99.6 321.6) scale(1.7)" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="#FFFFFF" fill-opacity="0.95"/>
   <!-- title / subtitle lines -->
   <rect x="172" y="320" width="150" height="16" rx="8" fill="#2A2A38"/>
   <rect x="172" y="350" width="104" height="12" rx="6" fill="#A0A0B0"/>

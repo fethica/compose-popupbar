@@ -11,7 +11,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
-A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked above your bottom navigation and morphs it into full-screen content through an interactive, interruptible transition. Inspired by, and gratefully crediting, [LNPopupController](https://github.com/LeoNatan/LNPopupController): the library owns presentation and gestures while your app supplies all content, artwork, progress, and actions.
+A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked above your bottom navigation and morphs it into full-screen content through an interactive, interruptible transition. Inspired by [LNPopupController](https://github.com/LeoNatan/LNPopupController): the library owns presentation and gestures while your app supplies all content, artwork, progress, and actions.
 
 <p align="center">
   <img src="docs/images/popupbar-demo.gif" width="320" alt="The sample app's floating popup bar dragged open into a full-screen player and back, then picking another track presents the player again">
