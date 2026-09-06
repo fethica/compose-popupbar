@@ -11,7 +11,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
-A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked above your bottom navigation and morphs it into full-screen content through an interactive, interruptible transition. Inspired by [LNPopupController](https://github.com/LeoNatan/LNPopupController): the library owns presentation and gestures while your app supplies all content, artwork, progress, and actions.
+A popup bar for Jetpack Compose, modeled on the mini player in Apple Music. A compact bar sits above your bottom navigation and expands into full-screen content as you drag. You can interrupt or reverse the transition.
+
+The library handles presentation and gestures. Your app supplies content, artwork, progress, and actions, so the popup can hold a player or any other content.
+
+[Swift Radio on iOS](https://github.com/analogcode/Swift-Radio-Pro) uses [LNPopupController](https://github.com/LeoNatan/LNPopupController) for this interaction. compose-popupbar brings it to Jetpack Compose.
 
 <p align="center">
   <img src="docs/images/popupbar-demo.gif" width="320" alt="The sample app's floating popup bar dragged open into a full-screen player and back, then picking another track presents the player again">
@@ -21,17 +25,17 @@ It powers the now playing bar in [Swift Radio Android](https://github.com/fethic
 
 ## Features
 
-- Interactive, interruptible bar-to-fullscreen morph that follows the finger
+- Drag the bar open or closed, with interruptible transitions
 - Four bar styles (floating, floating compact, prominent, compact) and four interaction styles
 - Shared artwork that travels between the bar thumbnail and the expanded content
-- Optional progress strip with drag-to-seek on the bar's hairline
+- Optional progress strip with drag-to-seek
 - Suspending state API: `present()`, `expand()`, `collapse()`, `hide()`, with continuous `progress` and `presentation` fractions
 - Accessibility built in: one merged bar node, hidden background content behind the expanded popup, localized close controls
 - Full RTL mirroring, verified with the sample app's live RTL and dark-theme toggles
 
 ## Bar styles
 
-Four `PopupBarStyle` values, all docked above the same bottom navigation. Pick one on `PopupHost`; the morph and the gestures stay the same.
+Choose one of four `PopupBarStyle` values on `PopupHost`. All sit above the same bottom navigation and use the same transitions and gestures.
 
 | Floating (default) | Floating compact |
 | --- | --- |
@@ -90,9 +94,9 @@ fun PlayerScreen() {
 }
 ```
 
-The bar expands the popup when tapped. Call the state methods from your own UI or app state to present, expand, collapse, or hide it.
+Tap the bar to expand it. Call the state methods from your own UI or app state to present, expand, collapse, or hide it.
 
-Option matrix, state API, insets and content design, shared artwork, and the composite-build setup are in [DOCUMENTATION.md](DOCUMENTATION.md).
+See the [documentation](DOCUMENTATION.md) for configuration options, the state API, insets, shared artwork, and local development with a composite build.
 
 ## Requirements
 
