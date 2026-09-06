@@ -17,6 +17,8 @@ A media-agnostic popup bar for Jetpack Compose. It keeps a compact bar docked ab
   <img src="docs/images/popupbar-demo.gif" width="320" alt="The sample app's floating popup bar dragged open into a full-screen player and back, then picking another track presents the player again">
 </p>
 
+It powers the now playing bar in [Swift Radio Android](https://github.com/fethica/Swift-Radio-Android) and [FRadio DZ](https://fradiodz.com).
+
 ## Features
 
 - Interactive, interruptible bar-to-fullscreen morph that follows the finger
